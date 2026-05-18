@@ -1,0 +1,42 @@
+{
+  "name": "chilekit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CLI y MCP open-source para consultar datos publicos chilenos.",
+  "type": "module",
+  "packageManager": "pnpm@11.1.2",
+  "engines": {
+    "node": ">=20.18"
+  },
+  "scripts": {
+    "audit": "pnpm audit --audit-level moderate",
+    "build": "pnpm -r run build",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm run audit",
+    "clean": "pnpm -r run clean",
+    "format": "biome check --write .",
+    "lint": "biome check .",
+    "test": "pnpm -r run test",
+    "typecheck": "pnpm -r run typecheck"
+  },
+  "keywords": [
+    "chile",
+    "cli",
+    "mcp",
+    "datos-publicos",
+    "open-data"
+  ],
+  "license": "MIT",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.15",
+    "@types/node": "25.8.0",
+    "tsup": "8.5.1",
+    "tsx": "4.22.1",
+    "typescript": "6.0.3",
+    "vitest": "4.1.6"
+  }
+}

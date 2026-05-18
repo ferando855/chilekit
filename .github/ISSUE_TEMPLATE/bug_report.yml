@@ -1,0 +1,31 @@
+name: Bug report
+description: Reporta un problema reproducible en ChileKit.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Resumen
+      description: Que paso y que esperabas que pasara.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducir
+      placeholder: |
+        1. Ejecuta `chilekit ...`
+        2. Observa ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: "0.1.0"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Salida o logs relevantes
+      render: shell

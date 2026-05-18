@@ -1,0 +1,36 @@
+{
+  "name": "@chilekit/cli",
+  "version": "0.1.0",
+  "description": "CLI agent-friendly para consultar datos publicos chilenos.",
+  "type": "module",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "chilekit": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --sourcemap --clean",
+    "chilekit": "tsx src/index.ts",
+    "clean": "rm -rf dist",
+    "test": "vitest run --config ../../vitest.config.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@chilekit/core": "workspace:*",
+    "@chilekit/mcp": "workspace:*",
+    "@chilekit/sources": "workspace:*",
+    "commander": "14.0.3"
+  }
+}

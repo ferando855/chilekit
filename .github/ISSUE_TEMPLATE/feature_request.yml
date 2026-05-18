@@ -1,0 +1,32 @@
+name: Feature request
+description: Propone una fuente, comando o herramienta MCP.
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Caso de uso
+      description: Que quieres consultar y para que.
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Fuente sugerida
+      placeholder: "https://..."
+  - type: dropdown
+    id: personal_data
+    attributes:
+      label: Contiene datos personales?
+      options:
+        - "No"
+        - "No estoy seguro"
+        - "Si"
+    validations:
+      required: true
+  - type: textarea
+    id: shape
+    attributes:
+      label: API/CLI esperado
+      placeholder: "chilekit ..."
