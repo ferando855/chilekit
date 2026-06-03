@@ -31,6 +31,6 @@
     "@chilekit/core": "workspace:*",
     "@chilekit/mcp": "workspace:*",
     "@chilekit/sources": "workspace:*",
-    "commander": "14.0.3"
+    "commander": "15.0.0"
   }
 }
