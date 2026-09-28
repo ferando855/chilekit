@@ -2,3 +2,8 @@ packages:
   - "packages/*"
 allowBuilds:
   esbuild: true
+# Parches de seguridad para dependencias transitivas de desarrollo.
+# Revisar y eliminar cuando tsup/vitest publiquen rangos que ya los incluyan.
+overrides:
+  "tsup>esbuild": "^0.28.1"
+  "vite": "^8.0.16"

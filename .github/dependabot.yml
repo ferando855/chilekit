@@ -13,8 +13,17 @@ updates:
           - "tsup"
           - "tsx"
           - "vitest"
+    ignore:
+      # @types/node sigue la version minima soportada de Node (engines), no la ultima.
+      - dependency-name: "@types/node"
+        update-types:
+          - version-update:semver-major
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - "*"
