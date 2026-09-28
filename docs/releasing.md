@@ -24,8 +24,8 @@ commit y el workflow que la construyo.
 3. Mergea a `main` y crea el tag:
 
    ```bash
-   git tag v0.2.0
-   git push origin v0.2.0
+   git tag v0.3.0
+   git push origin v0.3.0
    ```
 
 Actualiza tambien `version` y `packages[0].version` en `server.json`.

@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.3.0
+
+Primera version publicada en npm. Incluye todo lo de 0.2.0, que no se publico.
 
 ### Agregado
 
