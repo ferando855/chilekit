@@ -5,6 +5,7 @@ import { type FetchJsonOptions, fetchJson } from "./http.js";
 
 const MAX_HOLIDAYS_PER_YEAR = 40;
 
+// Snapshot de api.boostr.cl revisado el 2026-09-28. El respaldo legal es la BCN.
 const BUNDLED_HOLIDAYS: Record<number, Holiday[]> = {
   2026: [
     holiday("2026-01-01", "Año Nuevo", "civil", true),
@@ -24,7 +25,28 @@ const BUNDLED_HOLIDAYS: Record<number, Holiday[]> = {
     holiday("2026-12-08", "Inmaculada Concepción", "religious", false),
     holiday("2026-12-25", "Navidad", "civil", true),
   ],
+  2027: [
+    holiday("2027-01-01", "Año Nuevo", "civil", true),
+    holiday("2027-03-26", "Viernes Santo", "religious", false),
+    holiday("2027-03-27", "Sábado Santo", "religious", false),
+    holiday("2027-05-01", "Día Nacional del Trabajo", "civil", true),
+    holiday("2027-05-21", "Día de las Glorias Navales", "civil", false),
+    holiday("2027-06-21", "Día Nacional de los Pueblos Indígenas", "civil", false),
+    holiday("2027-06-28", "San Pedro y San Pablo", "religious", false),
+    holiday("2027-07-16", "Día de la Virgen del Carmen", "religious", false),
+    holiday("2027-08-15", "Asunción de la Virgen", "religious", false),
+    holiday("2027-09-17", "Feriado Adicional Fiestas Patrias", "civil", false),
+    holiday("2027-09-18", "Independencia Nacional", "civil", true),
+    holiday("2027-09-19", "Día de las Glorias del Ejército", "civil", true),
+    holiday("2027-10-11", "Encuentro de Dos Mundos", "civil", false),
+    holiday("2027-10-31", "Día de las Iglesias Evangélicas y Protestantes", "religious", false),
+    holiday("2027-11-01", "Día de Todos los Santos", "religious", false),
+    holiday("2027-12-08", "Inmaculada Concepción", "religious", false),
+    holiday("2027-12-25", "Navidad", "civil", true),
+  ],
 };
+
+export const BUNDLED_HOLIDAY_YEARS = Object.keys(BUNDLED_HOLIDAYS).map(Number);
 
 export interface GetHolidaysOptions extends FetchJsonOptions {
   live?: boolean;

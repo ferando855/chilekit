@@ -1,11 +1,16 @@
-import { assertIsoDate, currentYearInChile, todayInChile } from "@chilekit/core";
+import { assertIsoDate, currentYearInChile, todayInChile, validateRut } from "@chilekit/core";
 import { startMcpServer } from "@chilekit/mcp";
 import {
+  addBusinessDays,
+  countBusinessDays,
   findCommuneInfo,
   getHoliday,
   getHolidays,
+  getIndicator,
+  getLatestIndicators,
+  getNextHoliday,
   getSourceManifest,
-  getUf,
+  INDICATOR_CODES,
   listCommunesByRegion,
   listRegions,
   searchCommunes,
@@ -89,21 +94,138 @@ export function createProgram(): Command {
     });
 
   program
-    .command("uf")
-    .description("Consulta la UF desde mindicador.cl.")
-    .argument("[date]", "fecha YYYY-MM-DD o 'hoy'", "hoy")
+    .command("proximo-feriado")
+    .description("Muestra el proximo feriado desde una fecha (por defecto hoy).")
+    .argument("[date]", "fecha YYYY-MM-DD", parseIsoDate, todayInChile())
     .option("--json", "emite salida JSON para agentes y scripts")
     .action(async (date: string, options: JsonCommandOptions) => {
       const output = getOutputOptions(program, options);
-      const indicator = await getUf({ date });
+      const next = await getNextHoliday(date);
 
       if (output.json) {
-        printJson({ indicator });
+        printJson(next);
         return;
       }
 
       process.stdout.write(
-        `${indicator.date} ${indicator.name}: ${indicator.value} ${indicator.unit}\n`,
+        `${next.holiday.date}: ${next.holiday.name} (en ${next.daysUntil} ${next.daysUntil === 1 ? "dia" : "dias"})\n`,
+      );
+    });
+
+  program
+    .command("habiles")
+    .description(
+      "Cuenta dias habiles entre dos fechas: desde el dia siguiente a <desde> hasta <hasta>.",
+    )
+    .argument("<desde>", "fecha YYYY-MM-DD", parseIsoDate)
+    .argument("<hasta>", "fecha YYYY-MM-DD", parseIsoDate)
+    .option("--sabado-habil", "cuenta los sabados como dias habiles")
+    .option("--json", "emite salida JSON para agentes y scripts")
+    .action(
+      async (from: string, to: string, options: JsonCommandOptions & { sabadoHabil?: boolean }) => {
+        const output = getOutputOptions(program, options);
+        const result = await countBusinessDays(from, to, {
+          saturdayIsBusinessDay: options.sabadoHabil,
+        });
+
+        if (output.json) {
+          printJson(result);
+          return;
+        }
+
+        process.stdout.write(`${result.businessDays} dias habiles entre ${from} y ${to}.\n`);
+        printHolidayList("Feriados excluidos", result.holidaysExcluded);
+      },
+    );
+
+  program
+    .command("sumar-habiles")
+    .description("Suma dias habiles a una fecha (sin contar la fecha inicial).")
+    .argument("<fecha>", "fecha YYYY-MM-DD", parseIsoDate)
+    .argument("<dias>", "dias habiles a sumar (1-1000)", parseInteger("dias", 1, 1000))
+    .option("--sabado-habil", "cuenta los sabados como dias habiles")
+    .option("--json", "emite salida JSON para agentes y scripts")
+    .action(
+      async (
+        from: string,
+        days: number,
+        options: JsonCommandOptions & { sabadoHabil?: boolean },
+      ) => {
+        const output = getOutputOptions(program, options);
+        const result = await addBusinessDays(from, days, {
+          saturdayIsBusinessDay: options.sabadoHabil,
+        });
+
+        if (output.json) {
+          printJson(result);
+          return;
+        }
+
+        process.stdout.write(`${from} + ${days} dias habiles = ${result.date}\n`);
+        printHolidayList("Feriados saltados", result.holidaysSkipped);
+      },
+    );
+
+  program
+    .command("indicador")
+    .description(`Consulta un indicador economico: ${INDICATOR_CODES.join(", ")}.`)
+    .argument("<codigo>", "codigo del indicador, por ejemplo uf, dolar o utm")
+    .argument("[date]", "fecha YYYY-MM-DD o 'hoy' (por defecto, ultimo valor publicado)")
+    .option("--json", "emite salida JSON para agentes y scripts")
+    .action(async (code: string, date: string | undefined, options: JsonCommandOptions) => {
+      await printIndicator(program, code, date, options);
+    });
+
+  for (const code of ["uf", "dolar", "utm"] as const) {
+    program
+      .command(code)
+      .description(
+        `Consulta ${code === "uf" ? "la UF" : code === "dolar" ? "el dolar observado" : "la UTM"} desde mindicador.cl.`,
+      )
+      .argument("[date]", "fecha YYYY-MM-DD o 'hoy' (por defecto, ultimo valor publicado)")
+      .option("--json", "emite salida JSON para agentes y scripts")
+      .action(async (date: string | undefined, options: JsonCommandOptions) => {
+        await printIndicator(program, code, date, options);
+      });
+  }
+
+  program
+    .command("indicadores")
+    .description("Ultimo valor de todos los indicadores economicos.")
+    .option("--json", "emite salida JSON para agentes y scripts")
+    .action(async (options: JsonCommandOptions) => {
+      const output = getOutputOptions(program, options);
+      const indicators = await getLatestIndicators();
+
+      if (output.json) {
+        printJson({ indicators });
+        return;
+      }
+
+      printRows(
+        ["codigo", "nombre", "valor", "unidad", "fecha"],
+        indicators.map((item) => [item.code, item.name, item.value, item.unit, item.date]),
+      );
+    });
+
+  program
+    .command("rut")
+    .description(
+      "Valida formato y digito verificador de un RUT, localmente y sin consultar identidad.",
+    )
+    .argument("<rut>", "RUT con o sin puntos y guion")
+    .option("--json", "emite salida JSON para agentes y scripts")
+    .action((rut: string, options: JsonCommandOptions) => {
+      const output = getOutputOptions(program, options);
+      const result = validateRut(rut);
+
+      if (output.json) {
+        printJson(result);
+        return;
+      }
+
+      process.stdout.write(
+        result.valid ? `${result.formatted} es valido.\n` : `RUT invalido: ${rut}\n`,
       );
     });
 
@@ -300,6 +422,37 @@ function getOutputOptions(program: Command, commandOptions?: JsonCommandOptions)
   return {
     json: Boolean(program.opts<GlobalOptions>().json || commandOptions?.json),
   };
+}
+
+async function printIndicator(
+  program: Command,
+  code: string,
+  date: string | undefined,
+  options: JsonCommandOptions,
+): Promise<void> {
+  const output = getOutputOptions(program, options);
+  const indicator = await getIndicator(code, { date });
+
+  if (output.json) {
+    printJson({ indicator });
+    return;
+  }
+
+  process.stdout.write(
+    `${indicator.date} ${indicator.name}: ${indicator.value} ${indicator.unit}\n`,
+  );
+}
+
+function printHolidayList(title: string, holidays: Array<{ date: string; name: string }>): void {
+  if (holidays.length === 0) {
+    return;
+  }
+
+  process.stdout.write(`${title}:\n`);
+  printRows(
+    ["fecha", "nombre"],
+    holidays.map((holiday) => [holiday.date, holiday.name]),
+  );
 }
 
 function parseInteger(label: string, min: number, max: number) {

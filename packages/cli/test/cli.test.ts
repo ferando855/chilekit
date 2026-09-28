@@ -47,11 +47,23 @@ describe("cli", () => {
     expect(parsed.candidates.length).toBeGreaterThan(1);
   });
 
+  it("counts business days and validates RUTs", async () => {
+    expect(JSON.parse(await run(["habiles", "2026-09-14", "2026-09-21", "--json"]))).toMatchObject({
+      businessDays: 4,
+    });
+    expect(JSON.parse(await run(["sumar-habiles", "2026-12-30", "3", "--json"]))).toMatchObject({
+      date: "2027-01-05",
+    });
+    expect(JSON.parse(await run(["rut", "12345678-9", "--json"]))).toMatchObject({ valid: false });
+  });
+
   it.each([
     [["feriado", "2026-13-45"]],
     [["feriados", "abc"]],
     [["search", "ipc", "--limit", "abc"]],
     [["datasets", "salud", "--rows", "1000"]],
+    [["sumar-habiles", "2026-01-01", "0"]],
+    [["habiles", "2026-01-01", "ayer"]],
   ])("rejects invalid arguments: %j", async (args) => {
     await expect(run(args)).rejects.toThrow();
   });

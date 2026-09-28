@@ -199,18 +199,18 @@ describe("connectors treat upstream data as untrusted", () => {
   });
 
   it("drops holidays with invalid dates or from other years", async () => {
-    const holidays = await getHolidays(2027, {
+    const holidays = await getHolidays(2028, {
       fetchImpl: async () =>
         json({
           data: [
-            { date: "2027-02-30", title: "Fecha imposible" },
+            { date: "2028-02-30", title: "Fecha imposible" },
             { date: "1999-01-01", title: "Otro año" },
-            { date: "2027-01-01", inalienable: "yes", title: "Año Nuevo" },
+            { date: "2028-01-01", inalienable: "yes", title: "Año Nuevo" },
           ],
         }),
     });
 
-    expect(holidays).toEqual([expect.objectContaining({ date: "2027-01-01", inalienable: false })]);
+    expect(holidays).toEqual([expect.objectContaining({ date: "2028-01-01", inalienable: false })]);
   });
 });
 

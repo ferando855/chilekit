@@ -1,11 +1,17 @@
-import { todayInChile } from "@chilekit/core";
+import { todayInChile, validateRut } from "@chilekit/core";
 import {
+  addBusinessDays,
+  countBusinessDays,
   findCommuneInfo,
   getHoliday,
   getHolidays,
+  getIndicator,
+  getLatestIndicators,
+  getNextHoliday,
   getSourceManifest,
-  getUf,
+  INDICATOR_CODES,
   listCommunesByRegion,
+  listRegions,
   searchOpenDatasets,
   searchSources,
   VERSION,
@@ -90,22 +96,108 @@ export function createMcpServer(): McpServer {
     {
       title: "Indicador economico de Chile",
       annotations: NETWORK_TOOL,
-      description: "Obtiene un indicador economico inicial. En 0.1.0 soporta UF via mindicador.cl.",
+      description:
+        "Obtiene un indicador economico chileno via mindicador.cl. Sin fecha devuelve el ultimo valor publicado; con fecha, el valor de ese dia (puede no existir en fines de semana).",
       inputSchema: z.object({
         date: z
           .string()
           .regex(/^\d{4}-\d{2}-\d{2}$/)
           .optional(),
-        indicator: z.enum(["uf"]),
+        indicator: z.enum(INDICATOR_CODES as [string, ...string[]]),
       }),
     },
-    async ({ date, indicator }) => {
-      if (indicator !== "uf") {
-        throw new Error(`Indicador no soportado en 0.1.0: ${indicator}`);
-      }
+    async ({ date, indicator }) => textJson({ indicator: await getIndicator(indicator, { date }) }),
+  );
 
-      return textJson({ indicator: await getUf({ date }) });
+  server.registerTool(
+    "get_latest_indicators",
+    {
+      title: "Todos los indicadores economicos",
+      annotations: NETWORK_TOOL,
+      description:
+        "Ultimo valor de UF, dolar, euro, UTM, IPC, Imacec, TPM, IVP, cobre, desempleo y bitcoin en una sola llamada.",
+      inputSchema: z.object({}),
     },
+    async () => textJson({ indicators: await getLatestIndicators() }),
+  );
+
+  server.registerTool(
+    "get_next_holiday",
+    {
+      title: "Proximo feriado en Chile",
+      annotations: NETWORK_TOOL,
+      description: "Proximo feriado chileno en o despues de una fecha. Por defecto, hoy en Chile.",
+      inputSchema: z.object({
+        from: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .optional(),
+      }),
+    },
+    async ({ from }) => textJson(await getNextHoliday(from ?? todayInChile())),
+  );
+
+  server.registerTool(
+    "count_business_days",
+    {
+      title: "Contar dias habiles",
+      annotations: NETWORK_TOOL,
+      description:
+        "Cuenta dias habiles en Chile desde el dia siguiente a 'from' hasta 'to' inclusive, excluyendo domingos, feriados y (salvo saturday_is_business_day) sabados. Lista los feriados excluidos.",
+      inputSchema: z.object({
+        from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        saturday_is_business_day: z.boolean().default(false),
+        to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      }),
+    },
+    async ({ from, saturday_is_business_day, to }) =>
+      textJson(
+        await countBusinessDays(from, to, { saturdayIsBusinessDay: saturday_is_business_day }),
+      ),
+  );
+
+  server.registerTool(
+    "add_business_days",
+    {
+      title: "Sumar dias habiles",
+      annotations: NETWORK_TOOL,
+      description:
+        "Calcula la fecha que resulta de sumar N dias habiles chilenos a una fecha (sin contarla). Util para plazos. Lista los feriados saltados.",
+      inputSchema: z.object({
+        days: z.number().int().min(1).max(1000),
+        from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        saturday_is_business_day: z.boolean().default(false),
+      }),
+    },
+    async ({ days, from, saturday_is_business_day }) =>
+      textJson(
+        await addBusinessDays(from, days, { saturdayIsBusinessDay: saturday_is_business_day }),
+      ),
+  );
+
+  server.registerTool(
+    "validate_rut",
+    {
+      title: "Validar RUT",
+      annotations: LOCAL_TOOL,
+      description:
+        "Valida formato y digito verificador de un RUT chileno localmente. No consulta ni infiere la identidad asociada.",
+      inputSchema: z.object({
+        rut: z.string().min(1).max(32),
+      }),
+    },
+    async ({ rut }) => textJson(validateRut(rut)),
+  );
+
+  server.registerTool(
+    "list_regions",
+    {
+      title: "Regiones de Chile",
+      annotations: LOCAL_TOOL,
+      description: "Lista las 16 regiones de Chile con codigo, abreviacion e ISO 3166-2.",
+      inputSchema: z.object({}),
+    },
+    async () => textJson({ regions: listRegions() }),
   );
 
   server.registerTool(

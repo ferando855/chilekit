@@ -13,10 +13,19 @@ export const sourceManifests = [
     baseUrl: "https://api.boostr.cl/holidays",
     docsUrl: "https://docs.boostr.cl/reference/holidays-info",
     notes:
-      "Usa API publica Boostr/FeriadosApp como fuente operativa no oficial; incluye fallback local 2026 para uso offline. El respaldo legal oficial debe trazarse via BCN.",
+      "Usa API publica Boostr/FeriadosApp como fuente operativa no oficial; incluye datos locales 2026-2027 para uso offline. El respaldo legal oficial debe trazarse via BCN.",
     tools: [
       { name: "get_holidays", description: "Lista feriados chilenos por año." },
       { name: "get_holiday", description: "Busca si una fecha ISO es feriado." },
+      { name: "get_next_holiday", description: "Proximo feriado desde una fecha." },
+      {
+        name: "count_business_days",
+        description: "Cuenta dias habiles entre dos fechas, excluyendo fines de semana y feriados.",
+      },
+      {
+        name: "add_business_days",
+        description: "Suma dias habiles a una fecha para calcular plazos.",
+      },
     ],
   },
   {
@@ -49,8 +58,19 @@ export const sourceManifests = [
     status: "available",
     baseUrl: "https://mindicador.cl/api",
     docsUrl: "https://mindicador.cl/",
-    notes: "Fuente publica no oficial usada para MVP sin credenciales.",
-    tools: [{ name: "get_uf", description: "Obtiene UF por fecha." }],
+    notes:
+      "Fuente publica no oficial, sin credenciales. Replica series del Banco Central, INE y otros; algunas series (como IPC) pueden publicarse con retraso.",
+    tools: [
+      {
+        name: "get_economic_indicator",
+        description:
+          "Obtiene UF, dolar, euro, UTM, IPC, Imacec, TPM, IVP, cobre, desempleo o bitcoin por fecha.",
+      },
+      {
+        name: "get_latest_indicators",
+        description: "Ultimo valor de todos los indicadores en una consulta.",
+      },
+    ],
   },
   {
     id: "banco-central",
