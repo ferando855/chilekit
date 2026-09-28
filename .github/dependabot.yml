@@ -20,6 +20,11 @@ updates:
       - dependency-name: "@types/node"
         update-types:
           - version-update:semver-major
+      # TypeScript 7 (compilador nativo) elimina baseUrl y aun no expone la API que usa
+      # tsup para generar .d.ts. Se retoma junto con la migracion del build a tsdown.
+      - dependency-name: "typescript"
+        update-types:
+          - version-update:semver-major
   - package-ecosystem: github-actions
     directory: /
     schedule:
