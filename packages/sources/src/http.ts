@@ -4,6 +4,7 @@ export type FetchLike = typeof fetch;
 
 export const DEFAULT_TIMEOUT_MS = 10_000;
 export const DEFAULT_MAX_BYTES = 5 * 1024 * 1024;
+const MAX_REDIRECTS = 3;
 
 // Unicos hosts que ChileKit contacta. Cualquier otro destino (incluido un redirect)
 // se rechaza, asi un conector nunca puede usarse para alcanzar redes internas.
@@ -37,45 +38,80 @@ export async function fetchJson(
   const timeoutMs = options.timeoutMs ?? resolveTimeout();
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
 
-  let response: Response;
+  // Un unico signal cubre conexion, redirects y lectura del body.
+  const signal = AbortSignal.timeout(timeoutMs);
 
   try {
-    response = await fetchImpl(target, {
-      headers: {
-        accept: "application/json",
-        "user-agent": `chilekit/${VERSION} (+https://github.com/ferando855/chilekit)`,
-      },
-      redirect: "follow",
-      signal: AbortSignal.timeout(timeoutMs),
-    });
+    const response = await fetchFollowingAllowedRedirects(target, fetchImpl, signal);
+
+    if (!response.ok) {
+      throw new SourceRequestError(
+        `${target.host} returned ${response.status}`,
+        target.host,
+        response.status,
+      );
+    }
+
+    const text = await readTextWithLimit(response, maxBytes, target.host);
+
+    try {
+      return JSON.parse(text) as unknown;
+    } catch {
+      throw new SourceRequestError(`${target.host} returned invalid JSON`, target.host);
+    }
   } catch (error) {
+    if (error instanceof SourceRequestError) {
+      throw error;
+    }
+
     const reason =
-      error instanceof Error && error.name === "TimeoutError"
+      error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")
         ? `sin respuesta tras ${timeoutMs} ms`
         : error instanceof Error
           ? error.message
           : String(error);
     throw new SourceRequestError(`${target.host}: ${reason}`, target.host);
   }
+}
 
-  if (response.url) {
-    assertAllowedUrl(new URL(response.url));
-  }
+/**
+ * Sigue redirects manualmente y valida cada destino contra la allowlist ANTES de
+ * contactarlo. Con redirect: "follow" el request al host no permitido ya habria salido.
+ */
+async function fetchFollowingAllowedRedirects(
+  target: URL,
+  fetchImpl: FetchLike,
+  signal: AbortSignal,
+): Promise<Response> {
+  let current = target;
 
-  if (!response.ok) {
-    throw new SourceRequestError(
-      `${target.host} returned ${response.status}`,
-      target.host,
-      response.status,
-    );
-  }
+  for (let hop = 0; ; hop += 1) {
+    assertAllowedUrl(current);
 
-  const text = await readTextWithLimit(response, maxBytes, target.host);
+    const response = await fetchImpl(current, {
+      headers: {
+        accept: "application/json",
+        "user-agent": `chilekit/${VERSION} (+https://github.com/ferando855/chilekit)`,
+      },
+      redirect: "manual",
+      signal,
+    });
+    const location = response.headers.get("location");
 
-  try {
-    return JSON.parse(text) as unknown;
-  } catch {
-    throw new SourceRequestError(`${target.host} returned invalid JSON`, target.host);
+    if (response.status >= 300 && response.status < 400 && location) {
+      if (hop >= MAX_REDIRECTS) {
+        throw new SourceRequestError(`${target.host}: demasiados redirects`, target.host);
+      }
+
+      current = new URL(location, current);
+      continue;
+    }
+
+    if (response.url) {
+      assertAllowedUrl(new URL(response.url));
+    }
+
+    return response;
   }
 }
 

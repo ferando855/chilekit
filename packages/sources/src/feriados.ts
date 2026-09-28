@@ -46,9 +46,13 @@ export async function getHolidays(
       .filter((item) => item.date.startsWith(`${validYear}-`))
       .slice(0, MAX_HOLIDAYS_PER_YEAR);
 
-    if (parsed.length > 0) {
-      return parsed;
+    if (parsed.length === 0) {
+      // Chile siempre tiene feriados: una lista vacia significa que el formato cambio.
+      // Devolver [] haria que los calculos de dias habiles ignoren feriados en silencio.
+      throw new Error(`api.boostr.cl: respuesta sin feriados reconocibles para ${validYear}`);
     }
+
+    return parsed;
   } catch (error) {
     if (!BUNDLED_HOLIDAYS[validYear]) {
       throw error;

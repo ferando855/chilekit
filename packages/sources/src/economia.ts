@@ -39,7 +39,12 @@ export async function getMindicadorIndicator(
   const payload = (await fetchJson(endpoint, options)) as MindicadorResponse;
   const latest = Array.isArray(payload?.serie) ? payload.serie[0] : undefined;
 
-  if (!latest || typeof latest.valor !== "number" || !Number.isFinite(latest.valor)) {
+  if (
+    !latest ||
+    typeof latest.valor !== "number" ||
+    !Number.isFinite(latest.valor) ||
+    typeof latest.fecha !== "string"
+  ) {
     throw new Error(`mindicador.cl returned no serie values for ${code}`);
   }
 

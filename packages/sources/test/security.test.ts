@@ -41,6 +41,61 @@ describe("fetchJson", () => {
     );
   });
 
+  it("never contacts a disallowed redirect target", async () => {
+    const requested: string[] = [];
+    const fetchImpl = async (url: URL | string | Request) => {
+      requested.push(String(url));
+      return new Response(null, {
+        headers: { location: "http://169.254.169.254/latest/meta-data" },
+        status: 302,
+      });
+    };
+
+    await expect(fetchJson("https://mindicador.cl/api", { fetchImpl })).rejects.toThrow(
+      /no permitido/,
+    );
+    expect(requested).toEqual(["https://mindicador.cl/api"]);
+  });
+
+  it("follows allowlisted redirects with a hop limit", async () => {
+    let calls = 0;
+    const fetchImpl = async () => {
+      calls += 1;
+      return calls === 1
+        ? new Response(null, { headers: { location: "/api/uf" }, status: 301 })
+        : json({ ok: true });
+    };
+
+    await expect(fetchJson("https://mindicador.cl/api", { fetchImpl })).resolves.toEqual({
+      ok: true,
+    });
+
+    const loop = async () =>
+      new Response(null, { headers: { location: "https://mindicador.cl/api" }, status: 302 });
+    await expect(fetchJson("https://mindicador.cl/api", { fetchImpl: loop })).rejects.toThrow(
+      /demasiados redirects/,
+    );
+  });
+
+  it("applies the timeout while reading a slow body", async () => {
+    const fetchImpl = async (_url: URL | string | Request, init?: RequestInit) =>
+      new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode("{"));
+            init?.signal?.addEventListener("abort", () => controller.error(init.signal?.reason));
+          },
+        }),
+      );
+
+    const error = await fetchJson("https://mindicador.cl/api", { fetchImpl, timeoutMs: 20 }).catch(
+      (caught: unknown) => caught,
+    );
+
+    expect(error).toBeInstanceOf(SourceRequestError);
+    expect(String(error)).toMatch(/sin respuesta tras 20 ms/);
+  });
+
   it("identifies itself and sets a timeout", async () => {
     let init: RequestInit | undefined;
     await fetchJson("https://mindicador.cl/api", {
@@ -118,6 +173,23 @@ describe("connectors treat upstream data as untrusted", () => {
 
     await expect(searchOpenDatasets("x", { fetchImpl, rows: 500 })).rejects.toThrow(/rows/);
     await expect(searchOpenDatasets("x".repeat(500), { fetchImpl })).rejects.toThrow(/caracteres/);
+  });
+
+  it("fails loudly when the holiday payload format changes", async () => {
+    await expect(
+      getHolidays(2030, { fetchImpl: async () => json({ holidays: [{ date: "2030-01-01" }] }) }),
+    ).rejects.toThrow(/sin feriados reconocibles/);
+    await expect(
+      searchOpenDatasets("x", { fetchImpl: async () => json({ result: {}, success: true }) }),
+    ).rejects.toThrow(/unexpected format/);
+  });
+
+  it("returns a domain error when mindicador omits the date", async () => {
+    await expect(
+      getMindicadorIndicator("uf", {
+        fetchImpl: async () => json({ codigo: "uf", serie: [{ fecha: null, valor: 100 }] }),
+      }),
+    ).rejects.toThrow(/no serie values/);
   });
 
   it("rejects indicator codes that could alter the request path", async () => {

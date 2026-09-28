@@ -55,11 +55,11 @@ export async function searchOpenDatasets(
 
   const payload = (await fetchJson(url, options)) as CkanPackageSearchResponse;
 
-  if (!payload?.success) {
-    throw new Error("datos.gob.cl package_search failed");
+  if (!payload?.success || !Array.isArray(payload.result?.results)) {
+    throw new Error("datos.gob.cl package_search failed or returned an unexpected format");
   }
 
-  return (payload.result?.results ?? []).slice(0, rows).flatMap((dataset) => {
+  return payload.result.results.slice(0, rows).flatMap((dataset) => {
     const name = sanitizeOptionalText(dataset.name, { maxLength: 200, singleLine: true });
 
     if (!name || typeof dataset.id !== "string") {

@@ -49,7 +49,7 @@ crear hipervinculos engañosos en la terminal.
 ### 3. SSRF y destinos no esperados
 
 - `fetchJson` (`packages/sources/src/http.ts`) solo contacta hosts de una allowlist
-  explicita y solo por HTTPS. Un redirect que termine fuera de la allowlist se rechaza.
+  explicita y solo por HTTPS. Los redirects se siguen manualmente (maximo 3) y cada destino se valida contra la allowlist antes de contactarlo.
 - Los argumentos del agente nunca forman el host; solo van como query string codificada
   (`URLSearchParams`) o como segmentos validados con regex (`/^[a-z_]{1,32}$/`).
 
@@ -57,7 +57,7 @@ crear hipervinculos engañosos en la terminal.
 
 Un agente que queda esperando una tool que nunca responde es un fallo silencioso.
 
-- Timeout por request (10 s, configurable con `CHILEKIT_TIMEOUT_MS`, maximo 120 s).
+- Timeout por request que cubre conexion, redirects y lectura del body (10 s, configurable con `CHILEKIT_TIMEOUT_MS`, maximo 120 s).
 - Tope de 5 MB por respuesta, verificado mientras se lee el stream.
 - Limites de entrada: `rows` 1-20, `limit` 1-50, largo maximo en queries y nombres.
 - Tope de elementos procesados por respuesta (feriados, recursos por dataset).
