@@ -40,6 +40,16 @@ interface JsonCommandOptions {
   json?: boolean;
 }
 
+interface LocationOptions {
+  region?: string;
+  comuna?: string;
+  bancario?: boolean;
+}
+
+function toHolidayOptions(options: LocationOptions) {
+  return { bank: options.bancario, commune: options.comuna, region: options.region };
+}
+
 export function createProgram(): Command {
   const program = new Command();
 
@@ -57,25 +67,33 @@ export function createProgram(): Command {
     .argument("[year]", "año a consultar", parseInteger("año", 1900, 2200), currentYearInChile())
     .option("--json", "emite salida JSON para agentes y scripts")
     .option("--live", "consulta la fuente remota cuando este disponible")
-    .action(async (year: number, options: JsonCommandOptions & { live?: boolean }) => {
-      const output = getOutputOptions(program, options);
-      const holidays = await getHolidays(year, { live: options.live });
+    .option("--region <region>", "incluye feriados regionales de esta region")
+    .option("--comuna <comuna>", "incluye feriados regionales y comunales de esta comuna")
+    .option("--bancario", "incluye el 31 de diciembre (sin atencion bancaria)")
+    .action(
+      async (year: number, options: JsonCommandOptions & LocationOptions & { live?: boolean }) => {
+        const output = getOutputOptions(program, options);
+        const holidays = await getHolidays(year, {
+          ...toHolidayOptions(options),
+          live: options.live,
+        });
 
-      if (output.json) {
-        printJson({ holidays, source: "feriados", year });
-        return;
-      }
+        if (output.json) {
+          printJson({ holidays, source: "feriados", year });
+          return;
+        }
 
-      printRows(
-        ["fecha", "nombre", "tipo", "irrenunciable"],
-        holidays.map((holiday) => [
-          holiday.date,
-          holiday.name,
-          holiday.type,
-          holiday.inalienable ? "si" : "no",
-        ]),
-      );
-    });
+        printRows(
+          ["fecha", "nombre", "tipo", "irrenunciable"],
+          holidays.map((holiday) => [
+            holiday.date,
+            holiday.appliesTo ? `${holiday.name} (${holiday.appliesTo})` : holiday.name,
+            holiday.type,
+            holiday.inalienable ? "si" : "no",
+          ]),
+        );
+      },
+    );
 
   program
     .command("feriado")
@@ -83,33 +101,44 @@ export function createProgram(): Command {
     .argument("[date]", "fecha YYYY-MM-DD", parseIsoDate, todayInChile())
     .option("--json", "emite salida JSON para agentes y scripts")
     .option("--live", "consulta la fuente remota cuando este disponible")
-    .action(async (date: string, options: JsonCommandOptions & { live?: boolean }) => {
-      const output = getOutputOptions(program, options);
-      const holiday = await getHoliday(date, { live: options.live });
+    .option("--region <region>", "incluye feriados regionales de esta region")
+    .option("--comuna <comuna>", "incluye feriados regionales y comunales de esta comuna")
+    .option("--bancario", "incluye el 31 de diciembre (sin atencion bancaria)")
+    .action(
+      async (date: string, options: JsonCommandOptions & LocationOptions & { live?: boolean }) => {
+        const output = getOutputOptions(program, options);
+        const holiday = await getHoliday(date, {
+          ...toHolidayOptions(options),
+          live: options.live,
+        });
 
-      if (output.json) {
-        printJson({ date, holiday: holiday ?? null, isHoliday: Boolean(holiday) });
-        return;
-      }
+        if (output.json) {
+          printJson({ date, holiday: holiday ?? null, isHoliday: Boolean(holiday) });
+          return;
+        }
 
-      if (!holiday) {
-        process.stdout.write(`${date} no es feriado registrado.\n`);
-        return;
-      }
+        if (!holiday) {
+          process.stdout.write(`${date} no es feriado registrado.\n`);
+          return;
+        }
 
-      process.stdout.write(
-        `${holiday.date}: ${holiday.name} (${holiday.type}${holiday.inalienable ? ", irrenunciable" : ""})\n`,
-      );
-    });
+        process.stdout.write(
+          `${holiday.date}: ${holiday.name} (${holiday.type}${holiday.inalienable ? ", irrenunciable" : ""})\n`,
+        );
+      },
+    );
 
   program
     .command("proximo-feriado")
     .description("Muestra el proximo feriado desde una fecha (por defecto hoy).")
     .argument("[date]", "fecha YYYY-MM-DD", parseIsoDate, todayInChile())
     .option("--json", "emite salida JSON para agentes y scripts")
-    .action(async (date: string, options: JsonCommandOptions) => {
+    .option("--region <region>", "incluye feriados regionales de esta region")
+    .option("--comuna <comuna>", "incluye feriados regionales y comunales de esta comuna")
+    .option("--bancario", "incluye el 31 de diciembre (sin atencion bancaria)")
+    .action(async (date: string, options: JsonCommandOptions & LocationOptions) => {
       const output = getOutputOptions(program, options);
-      const next = await getNextHoliday(date);
+      const next = await getNextHoliday(date, toHolidayOptions(options));
 
       if (output.json) {
         printJson(next);
@@ -130,10 +159,18 @@ export function createProgram(): Command {
     .argument("<hasta>", "fecha YYYY-MM-DD", parseIsoDate)
     .option("--sabado-habil", "cuenta los sabados como dias habiles")
     .option("--json", "emite salida JSON para agentes y scripts")
+    .option("--region <region>", "incluye feriados regionales de esta region")
+    .option("--comuna <comuna>", "incluye feriados regionales y comunales de esta comuna")
+    .option("--bancario", "incluye el 31 de diciembre (sin atencion bancaria)")
     .action(
-      async (from: string, to: string, options: JsonCommandOptions & { sabadoHabil?: boolean }) => {
+      async (
+        from: string,
+        to: string,
+        options: JsonCommandOptions & LocationOptions & { sabadoHabil?: boolean },
+      ) => {
         const output = getOutputOptions(program, options);
         const result = await countBusinessDays(from, to, {
+          ...toHolidayOptions(options),
           saturdayIsBusinessDay: options.sabadoHabil,
         });
 
@@ -154,14 +191,18 @@ export function createProgram(): Command {
     .argument("<dias>", "dias habiles a sumar (1-1000)", parseInteger("dias", 1, 1000))
     .option("--sabado-habil", "cuenta los sabados como dias habiles")
     .option("--json", "emite salida JSON para agentes y scripts")
+    .option("--region <region>", "incluye feriados regionales de esta region")
+    .option("--comuna <comuna>", "incluye feriados regionales y comunales de esta comuna")
+    .option("--bancario", "incluye el 31 de diciembre (sin atencion bancaria)")
     .action(
       async (
         from: string,
         days: number,
-        options: JsonCommandOptions & { sabadoHabil?: boolean },
+        options: JsonCommandOptions & LocationOptions & { sabadoHabil?: boolean },
       ) => {
         const output = getOutputOptions(program, options);
         const result = await addBusinessDays(from, days, {
+          ...toHolidayOptions(options),
           saturdayIsBusinessDay: options.sabadoHabil,
         });
 

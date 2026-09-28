@@ -34,6 +34,8 @@ Si `chilekit` no esta instalado, usa `npx -y @chilekit/cli` en su lugar.
   excluye sabados, domingos y feriados. Agrega `--sabado-habil` solo si el plazo cuenta
   los sabados, y dile al usuario que regla usaste.
 - Muestra los feriados que la respuesta lista como excluidos o saltados.
+- Si el plazo corre en Arica y Parinacota, Chillan o Chillan Viejo, agrega `--comuna`
+  o `--region`. Para plazos bancarios agrega `--bancario`.
 - Un indicador sin fecha es el ultimo valor publicado: informa su `date`.
 - Exit code distinto de 0 significa error; el mensaje viene en stderr como JSON.
 - Si `comuna` devuelve `candidates`, pregunta al usuario cual quiso decir.

@@ -61,6 +61,16 @@ describe("mcp", () => {
     expect(JSON.parse(text)).toMatchObject({ date: "2026-09-21" });
   });
 
+  it("applies regional holidays when a location is given", async () => {
+    const { text } = await callJson("add_business_days", {
+      commune: "Chillán",
+      days: 1,
+      from: "2026-08-19",
+    });
+
+    expect(JSON.parse(text)).toMatchObject({ date: "2026-08-21" });
+  });
+
   it("validates RUTs locally", async () => {
     const { text } = await callJson("validate_rut", { rut: "12.345.678-5" });
 

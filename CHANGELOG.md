@@ -7,6 +7,10 @@
 - `convertir` y tool `convert_currency`: montos entre pesos, UF, UTM, dolar y euro en
   cualquier fecha, aceptando formato chileno (`1.500.000`, `3,5`).
 - `reajustar` y tool `adjust_by_uf`: reajuste de montos por variacion de la UF.
+- Feriados regionales, comunales y bancario (`--region`, `--comuna`, `--bancario` y los
+  campos `region`, `commune`, `include_bank_holiday` en MCP): 7 de junio en Arica y
+  Parinacota, 20 de agosto en Chillan y Chillan Viejo y 31 de diciembre bancario, tambien
+  en el calculo de dias habiles.
 
 ## 0.2.0
 

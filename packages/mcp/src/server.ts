@@ -29,6 +29,39 @@ import { textJson } from "./format.js";
 const LOCAL_TOOL = { idempotentHint: true, openWorldHint: false, readOnlyHint: true } as const;
 const NETWORK_TOOL = { idempotentHint: true, openWorldHint: true, readOnlyHint: true } as const;
 
+// Feriados regionales (7 jun Arica y Parinacota), comunales (20 ago Chillan y Chillan Viejo)
+// y bancario (31 dic). Sin estos campos solo se consideran feriados nacionales.
+const LOCATION_FIELDS = {
+  commune: z
+    .string()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe("Comuna: incluye sus feriados regionales y comunales."),
+  include_bank_holiday: z
+    .boolean()
+    .default(false)
+    .describe("Incluye el 31 de diciembre, sin atencion bancaria."),
+  region: z
+    .string()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe("Region (nombre, codigo, romano o ISO): incluye sus feriados regionales."),
+};
+
+function toHolidayOptions(location: {
+  commune?: string;
+  include_bank_holiday?: boolean;
+  region?: string;
+}) {
+  return {
+    bank: location.include_bank_holiday,
+    commune: location.commune,
+    region: location.region,
+  };
+}
+
 export function createMcpServer(): McpServer {
   const server = new McpServer(
     {
@@ -65,10 +98,12 @@ export function createMcpServer(): McpServer {
       annotations: NETWORK_TOOL,
       description: "Lista feriados chilenos de un año.",
       inputSchema: z.object({
+        ...LOCATION_FIELDS,
         year: z.number().int().min(1900).max(2200),
       }),
     },
-    async ({ year }) => textJson({ holidays: await getHolidays(year), year }),
+    async ({ year, ...location }) =>
+      textJson({ holidays: await getHolidays(year, toHolidayOptions(location)), year }),
   );
 
   server.registerTool(
@@ -78,6 +113,7 @@ export function createMcpServer(): McpServer {
       annotations: NETWORK_TOOL,
       description: "Indica si una fecha ISO es feriado en Chile.",
       inputSchema: z.object({
+        ...LOCATION_FIELDS,
         date: z
           .string()
           .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -85,10 +121,10 @@ export function createMcpServer(): McpServer {
           .describe("Fecha YYYY-MM-DD. Por defecto, hoy en Chile."),
       }),
     },
-    async ({ date }) => {
+    async ({ date, ...location }) => {
       // El default se calcula por llamada: un servidor MCP puede vivir varios dias.
       const target = date ?? todayInChile();
-      const holiday = await getHoliday(target);
+      const holiday = await getHoliday(target, toHolidayOptions(location));
 
       return textJson({ date: target, holiday: holiday ?? null, isHoliday: Boolean(holiday) });
     },
@@ -171,13 +207,15 @@ export function createMcpServer(): McpServer {
       annotations: NETWORK_TOOL,
       description: "Proximo feriado chileno en o despues de una fecha. Por defecto, hoy en Chile.",
       inputSchema: z.object({
+        ...LOCATION_FIELDS,
         from: z
           .string()
           .regex(/^\d{4}-\d{2}-\d{2}$/)
           .optional(),
       }),
     },
-    async ({ from }) => textJson(await getNextHoliday(from ?? todayInChile())),
+    async ({ from, ...location }) =>
+      textJson(await getNextHoliday(from ?? todayInChile(), toHolidayOptions(location))),
   );
 
   server.registerTool(
@@ -188,14 +226,18 @@ export function createMcpServer(): McpServer {
       description:
         "Cuenta dias habiles en Chile desde el dia siguiente a 'from' hasta 'to' inclusive, excluyendo domingos, feriados y (salvo saturday_is_business_day) sabados. Lista los feriados excluidos.",
       inputSchema: z.object({
+        ...LOCATION_FIELDS,
         from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
         saturday_is_business_day: z.boolean().default(false),
         to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       }),
     },
-    async ({ from, saturday_is_business_day, to }) =>
+    async ({ from, saturday_is_business_day, to, ...location }) =>
       textJson(
-        await countBusinessDays(from, to, { saturdayIsBusinessDay: saturday_is_business_day }),
+        await countBusinessDays(from, to, {
+          ...toHolidayOptions(location),
+          saturdayIsBusinessDay: saturday_is_business_day,
+        }),
       ),
   );
 
@@ -207,14 +249,18 @@ export function createMcpServer(): McpServer {
       description:
         "Calcula la fecha que resulta de sumar N dias habiles chilenos a una fecha (sin contarla). Util para plazos. Lista los feriados saltados.",
       inputSchema: z.object({
+        ...LOCATION_FIELDS,
         days: z.number().int().min(1).max(1000),
         from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
         saturday_is_business_day: z.boolean().default(false),
       }),
     },
-    async ({ days, from, saturday_is_business_day }) =>
+    async ({ days, from, saturday_is_business_day, ...location }) =>
       textJson(
-        await addBusinessDays(from, days, { saturdayIsBusinessDay: saturday_is_business_day }),
+        await addBusinessDays(from, days, {
+          ...toHolidayOptions(location),
+          saturdayIsBusinessDay: saturday_is_business_day,
+        }),
       ),
   );
 

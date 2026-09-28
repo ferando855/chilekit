@@ -124,6 +124,11 @@ es el contrato recomendado ([docs/agents.md](docs/agents.md)). También hay una
 Todos aceptan `--json`. `habiles` y `sumar-habiles` aceptan `--sabado-habil` para plazos
 que solo excluyen domingos y festivos.
 
+Los comandos de feriados y días hábiles aceptan `--region`, `--comuna` y `--bancario` para
+incluir los feriados que las fuentes nacionales omiten: el 7 de junio en Arica y Parinacota
+(Ley 20.663), el 20 de agosto en Chillán y Chillán Viejo (Ley 20.768) y el 31 de diciembre
+bancario.
+
 ## Tools MCP
 
 | Tool | Red | Descripción |

@@ -55,6 +55,10 @@ export interface Holiday {
   inalienable: boolean;
   sourceId: string;
   notes?: string;
+  /** Alcance cuando el feriado no rige en todo el pais. */
+  scope?: "regional" | "communal" | "bank";
+  appliesTo?: string;
+  legalBasis?: string;
 }
 
 export interface EconomicIndicator {

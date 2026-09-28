@@ -57,6 +57,15 @@ describe("cli", () => {
     expect(JSON.parse(await run(["rut", "12345678-9", "--json"]))).toMatchObject({ valid: false });
   });
 
+  it("accepts region, commune and bank options", async () => {
+    expect(
+      JSON.parse(await run(["feriado", "2027-06-07", "--region", "Arica", "--json"])),
+    ).toMatchObject({ isHoliday: true });
+    expect(
+      JSON.parse(await run(["sumar-habiles", "2026-12-30", "1", "--bancario", "--json"])),
+    ).toMatchObject({ date: "2027-01-04" });
+  });
+
   it.each([
     [["feriado", "2026-13-45"]],
     [["feriados", "abc"]],
