@@ -1,6 +1,6 @@
 {
   "name": "chilekit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "CLI y MCP open-source para consultar datos publicos chilenos.",
   "type": "module",
