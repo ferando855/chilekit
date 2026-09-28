@@ -2,10 +2,32 @@
   "name": "@chilekit/mcp",
   "version": "0.1.0",
   "description": "Servidor MCP stdio para ChileKit.",
-  "type": "module",
+  "keywords": [
+    "chile",
+    "mcp",
+    "model-context-protocol",
+    "ai-agents",
+    "claude",
+    "datos-publicos"
+  ],
+  "homepage": "https://github.com/ferando855/chilekit/tree/main/packages/mcp#readme",
+  "bugs": {
+    "url": "https://github.com/ferando855/chilekit/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ferando855/chilekit.git",
+    "directory": "packages/mcp"
+  },
   "license": "MIT",
+  "author": "ferando855 (https://github.com/ferando855)",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "bin": {
     "chilekit-mcp": "./dist/bin.js"

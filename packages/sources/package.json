@@ -2,11 +2,32 @@
   "name": "@chilekit/sources",
   "version": "0.1.0",
   "description": "Conectores y manifiestos de fuentes publicas chilenas para ChileKit.",
-  "type": "module",
+  "keywords": [
+    "chile",
+    "datos-abiertos",
+    "feriados",
+    "indicadores-economicos",
+    "open-data"
+  ],
+  "homepage": "https://github.com/ferando855/chilekit/tree/main/packages/sources#readme",
+  "bugs": {
+    "url": "https://github.com/ferando855/chilekit/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ferando855/chilekit.git",
+    "directory": "packages/sources"
+  },
   "license": "MIT",
+  "author": "ferando855 (https://github.com/ferando855)",
+  "type": "module",
   "sideEffects": false,
+  "engines": {
+    "node": ">=22.12"
+  },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "files": [
     "dist",

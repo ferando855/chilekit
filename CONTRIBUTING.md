@@ -24,6 +24,18 @@ Antes de escribir codigo, agrega o actualiza su manifiesto en `@chilekit/sources
 - Herramientas expuestas.
 - Limitaciones conocidas.
 
+Luego, en el conector:
+
+1. Agrega el host a `ALLOWED_HOSTS` en `packages/sources/src/http.ts` y usa `fetchJson`.
+   No llames a `fetch` directamente.
+2. Limpia cada string externo con `sanitizeText` o `sanitizeOptionalText`, y cada URL
+   con `sanitizeUrl`, antes de devolverlo.
+3. Valida los inputs (rangos, largo, formato) antes de salir a la red.
+4. Agrega tests con `fetchImpl` simulado, incluido al menos un payload hostil.
+5. Expón la funcionalidad en CLI (con `--json`) y MCP (con `annotations`).
+
+`AGENTS.md` resume estas reglas para agentes de codigo.
+
 ## Reglas de datos
 
 - No agregar rutificadores ni fuentes que unan RUT con identidad, direccion, telefono,
@@ -41,8 +53,11 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
+pnpm smoke
 pnpm audit
 ```
+
+O todo junto con `pnpm check`.
 
 ## Versionado
 

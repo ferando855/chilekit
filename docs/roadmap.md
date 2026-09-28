@@ -3,21 +3,30 @@
 ## 0.1.0
 
 - Monorepo publico con paquetes `core`, `sources`, `cli` y `mcp`.
-- CLI con `feriados`, `uf`, `comunas`, `datasets`, `search`, `source` y `mcp`.
-- MCP stdio con herramientas equivalentes para agentes.
-- Manifiestos de fuentes iniciales.
-- Readiness open source: CI, seguridad, contribucion, licencia, templates y auditoria.
+- CLI y MCP con feriados, UF, comunas, datasets y catalogo de fuentes.
 
-## 0.2.x
+## 0.2.0
 
-- Banco Central BDE con busqueda de series y manejo de credenciales opcionales.
-- ChileCompra con ejemplos reales y rate limits documentados.
-- Mejor cache local para fuentes lentas o inestables.
-- Exportadores `json`, `csv` y `ndjson` para comandos principales.
+- Binarios que funcionan instalados via npm/npx (`chilekit`, `chilekit-mcp`).
+- 11 indicadores economicos, dias habiles, proximo feriado y validacion de RUT.
+- Endurecimiento para agentes: allowlist de hosts, timeouts, topes de tamaño,
+  saneamiento de datos externos y anotaciones MCP.
+- Supply chain: acciones fijadas por SHA, zizmor, dependency review, Scorecard y
+  publicacion con provenance.
 
 ## 0.3.x
 
-- BCN y leyes: busqueda y citas.
-- INE/SIMEL: busqueda de datasets y series.
-- Geodatos IDE Chile con manifiestos GeoJSON/WFS.
-- Recursos MCP para fuentes y manifiestos versionados.
+- Banco Central BDE como fuente oficial de UF, dolar e IPC, con credenciales opcionales
+  (mindicador publica el IPC con meses de retraso).
+- Feriados desde fuente oficial (BCN / datos.gob.cl) y verificacion cruzada con Boostr.
+- Cache local opcional para fuentes lentas o inestables.
+- Salida `csv` y `ndjson` en comandos de listas.
+- `structuredContent` y `outputSchema` en las tools MCP.
+
+## 0.4.x
+
+- ChileCompra con rate limits documentados.
+- BCN: busqueda de normas y citas.
+- INE: busqueda de series.
+- CNE: precios de combustibles por comuna.
+- Recursos MCP para manifiestos de fuentes.
