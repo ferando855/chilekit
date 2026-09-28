@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.ferando855/chilekit",
+  "title": "ChileKit",
+  "description": "Chilean public data for AI agents: holidays, business days, UF, currency, time zones.",
+  "repository": {
+    "url": "https://github.com/ferando855/chilekit",
+    "source": "github",
+    "subfolder": "packages/mcp"
+  },
+  "version": "0.2.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@chilekit/mcp",
+      "version": "0.2.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

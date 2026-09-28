@@ -95,6 +95,10 @@ args = ["-y", "@chilekit/mcp"]
 ```
 </details>
 
+Las tools devuelven `structuredContent` (JSON tipado) además de texto. El servidor está
+preparado para el [registro oficial de MCP](https://registry.modelcontextprotocol.io) como
+`io.github.ferando855/chilekit`.
+
 ¿Tu agente ejecuta comandos de shell? Entonces no necesitas MCP: `chilekit <comando> --json`
 es el contrato recomendado ([docs/agents.md](docs/agents.md)). También hay una
 [Agent Skill](skills/chilekit/SKILL.md) lista para copiar.
