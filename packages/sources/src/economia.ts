@@ -1,11 +1,10 @@
 import type { EconomicIndicator } from "@chilekit/core";
-import { toChileDate, todayInChile, toMindicadorDate } from "@chilekit/core";
+import { sanitizeText, toChileDate, todayInChile, toMindicadorDate } from "@chilekit/core";
 
-type FetchLike = typeof fetch;
+import { type FetchJsonOptions, fetchJson } from "./http.js";
 
-export interface GetIndicatorOptions {
+export interface GetIndicatorOptions extends FetchJsonOptions {
   date?: string;
-  fetchImpl?: FetchLike;
 }
 
 interface MindicadorResponse {
@@ -29,30 +28,32 @@ export async function getMindicadorIndicator(
   code: string,
   options: GetIndicatorOptions = {},
 ): Promise<EconomicIndicator> {
-  const fetchImpl = options.fetchImpl ?? fetch;
+  if (!/^[a-z_]{1,32}$/.test(code)) {
+    throw new Error(`Codigo de indicador invalido: ${code}`);
+  }
+
   const date = options.date;
   const endpoint = date
     ? `https://mindicador.cl/api/${code}/${toMindicadorDate(date)}`
     : `https://mindicador.cl/api/${code}`;
-  const response = await fetchImpl(endpoint);
+  const payload = (await fetchJson(endpoint, options)) as MindicadorResponse;
+  const latest = Array.isArray(payload?.serie) ? payload.serie[0] : undefined;
 
-  if (!response.ok) {
-    throw new Error(`mindicador.cl returned ${response.status} for ${code}`);
-  }
-
-  const payload = (await response.json()) as MindicadorResponse;
-  const latest = payload.serie[0];
-
-  if (!latest) {
+  if (
+    !latest ||
+    typeof latest.valor !== "number" ||
+    !Number.isFinite(latest.valor) ||
+    typeof latest.fecha !== "string"
+  ) {
     throw new Error(`mindicador.cl returned no serie values for ${code}`);
   }
 
   return {
-    code: payload.codigo,
+    code,
     date: toChileDate(latest.fecha),
-    name: payload.nombre,
+    name: sanitizeText(String(payload.nombre ?? code), { maxLength: 100, singleLine: true }),
     sourceId: "mindicador",
-    unit: payload.unidad_medida,
+    unit: sanitizeText(String(payload.unidad_medida ?? ""), { maxLength: 40, singleLine: true }),
     value: latest.valor,
   };
 }

@@ -8,7 +8,8 @@ Checklist para mantener el repo publico sin ruido:
 - CI en Node 22 y 24.
 - Dependabot para npm y GitHub Actions.
 - CodeQL para JavaScript/TypeScript.
-- Tests sin red externa.
+- Tests sin red externa, incluidos tests de seguridad con payloads hostiles.
+- Threat model documentado en `docs/threat-model.md`.
 - `pnpm audit --audit-level moderate`.
 - Templates de bug, feature y PR.
 - Sin secretos ni `.env` commiteados.

@@ -1,3 +1,5 @@
+import { sanitizeText } from "@chilekit/core";
+
 export interface OutputOptions {
   json?: boolean;
 }
@@ -10,7 +12,11 @@ export function printRows(
   headers: string[],
   rows: Array<Array<string | number | boolean | undefined>>,
 ): void {
-  const normalizedRows = rows.map((row) => row.map((cell) => String(cell ?? "")));
+  // Las celdas pueden traer texto de terceros: se limpian secuencias de control
+  // para que no puedan manipular la terminal.
+  const normalizedRows = rows.map((row) =>
+    row.map((cell) => sanitizeText(String(cell ?? ""), { maxLength: 200, singleLine: true })),
+  );
   const widths = headers.map((header, index) =>
     Math.max(header.length, ...normalizedRows.map((row) => row[index]?.length ?? 0)),
   );

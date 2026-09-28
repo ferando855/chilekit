@@ -12,6 +12,7 @@ import {
   searchOpenDatasets,
   searchSources,
   sourceManifests,
+  VERSION,
 } from "@chilekit/sources";
 import { Command, InvalidArgumentError } from "commander";
 
@@ -31,7 +32,7 @@ export function createProgram(): Command {
   program
     .name("chilekit")
     .description("CLI y MCP open-source para consultar datos publicos chilenos.")
-    .version("0.1.0")
+    .version(VERSION)
     .option("--json", "emite salida JSON para agentes y scripts")
     .showHelpAfterError("(usa --help para ver ejemplos)")
     .showSuggestionAfterError();

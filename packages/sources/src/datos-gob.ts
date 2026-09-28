@@ -1,9 +1,13 @@
 import type { OpenDatasetResult } from "@chilekit/core";
+import { sanitizeOptionalText, sanitizeText, sanitizeUrl } from "@chilekit/core";
 
-type FetchLike = typeof fetch;
+import { type FetchJsonOptions, fetchJson } from "./http.js";
 
-export interface SearchOpenDatasetsOptions {
-  fetchImpl?: FetchLike;
+export const MAX_DATASET_ROWS = 20;
+export const MAX_DATASET_QUERY_LENGTH = 200;
+const MAX_RESOURCES_PER_DATASET = 20;
+
+export interface SearchOpenDatasetsOptions extends FetchJsonOptions {
   rows?: number;
 }
 
@@ -35,34 +39,52 @@ export async function searchOpenDatasets(
   options: SearchOpenDatasetsOptions = {},
 ): Promise<OpenDatasetResult[]> {
   const rows = options.rows ?? 5;
+  const trimmedQuery = query.trim();
+
+  if (!Number.isInteger(rows) || rows < 1 || rows > MAX_DATASET_ROWS) {
+    throw new Error(`rows debe ser un entero entre 1 y ${MAX_DATASET_ROWS}.`);
+  }
+
+  if (!trimmedQuery || trimmedQuery.length > MAX_DATASET_QUERY_LENGTH) {
+    throw new Error(`La busqueda debe tener entre 1 y ${MAX_DATASET_QUERY_LENGTH} caracteres.`);
+  }
+
   const url = new URL("https://datos.gob.cl/api/3/action/package_search");
-  url.searchParams.set("q", query);
+  url.searchParams.set("q", trimmedQuery);
   url.searchParams.set("rows", String(rows));
 
-  const fetchImpl = options.fetchImpl ?? fetch;
-  const response = await fetchImpl(url);
+  const payload = (await fetchJson(url, options)) as CkanPackageSearchResponse;
 
-  if (!response.ok) {
-    throw new Error(`datos.gob.cl returned ${response.status}`);
+  if (!payload?.success || !Array.isArray(payload.result?.results)) {
+    throw new Error("datos.gob.cl package_search failed or returned an unexpected format");
   }
 
-  const payload = (await response.json()) as CkanPackageSearchResponse;
+  return payload.result.results.slice(0, rows).flatMap((dataset) => {
+    const name = sanitizeOptionalText(dataset.name, { maxLength: 200, singleLine: true });
 
-  if (!payload.success) {
-    throw new Error("datos.gob.cl package_search failed");
-  }
+    if (!name || typeof dataset.id !== "string") {
+      return [];
+    }
 
-  return (payload.result?.results ?? []).map((dataset) => ({
-    id: dataset.id,
-    license: dataset.license_title,
-    name: dataset.name,
-    organization: dataset.organization?.title ?? dataset.organization?.name,
-    resources: (dataset.resources ?? []).map((resource) => ({
-      format: resource.format,
-      name: resource.name ?? "resource",
-      url: resource.url,
-    })),
-    title: dataset.title ?? dataset.name,
-    url: `https://datos.gob.cl/dataset/${dataset.name}`,
-  }));
+    return [
+      {
+        id: sanitizeText(dataset.id, { maxLength: 100, singleLine: true }),
+        license: sanitizeOptionalText(dataset.license_title, { singleLine: true }),
+        name,
+        organization: sanitizeOptionalText(
+          dataset.organization?.title ?? dataset.organization?.name,
+          { singleLine: true },
+        ),
+        resources: (dataset.resources ?? [])
+          .slice(0, MAX_RESOURCES_PER_DATASET)
+          .map((resource) => ({
+            format: sanitizeOptionalText(resource.format, { maxLength: 20, singleLine: true }),
+            name: sanitizeOptionalText(resource.name, { singleLine: true }) ?? "resource",
+            url: sanitizeUrl(resource.url),
+          })),
+        title: sanitizeOptionalText(dataset.title, { singleLine: true }) ?? name,
+        url: `https://datos.gob.cl/dataset/${encodeURIComponent(name)}`,
+      },
+    ];
+  });
 }

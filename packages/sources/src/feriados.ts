@@ -1,7 +1,9 @@
 import type { Holiday } from "@chilekit/core";
-import { assertIsoDate, assertYear } from "@chilekit/core";
+import { assertIsoDate, assertYear, isIsoDate, sanitizeOptionalText } from "@chilekit/core";
 
-type FetchLike = typeof fetch;
+import { type FetchJsonOptions, fetchJson } from "./http.js";
+
+const MAX_HOLIDAYS_PER_YEAR = 40;
 
 const BUNDLED_HOLIDAYS: Record<number, Holiday[]> = {
   2026: [
@@ -24,8 +26,7 @@ const BUNDLED_HOLIDAYS: Record<number, Holiday[]> = {
   ],
 };
 
-export interface GetHolidaysOptions {
-  fetchImpl?: FetchLike;
+export interface GetHolidaysOptions extends FetchJsonOptions {
   live?: boolean;
 }
 
@@ -40,19 +41,18 @@ export async function getHolidays(
   }
 
   try {
-    const fetchImpl = options.fetchImpl ?? fetch;
-    const response = await fetchImpl(`https://api.boostr.cl/holidays/${validYear}.json`);
+    const payload = await fetchJson(`https://api.boostr.cl/holidays/${validYear}.json`, options);
+    const parsed = parseHolidayPayload(payload, validYear)
+      .filter((item) => item.date.startsWith(`${validYear}-`))
+      .slice(0, MAX_HOLIDAYS_PER_YEAR);
 
-    if (!response.ok) {
-      throw new Error(`Feriados API returned ${response.status}`);
+    if (parsed.length === 0) {
+      // Chile siempre tiene feriados: una lista vacia significa que el formato cambio.
+      // Devolver [] haria que los calculos de dias habiles ignoren feriados en silencio.
+      throw new Error(`api.boostr.cl: respuesta sin feriados reconocibles para ${validYear}`);
     }
 
-    const payload = (await response.json()) as unknown;
-    const parsed = parseHolidayPayload(payload, validYear);
-
-    if (parsed.length > 0) {
-      return parsed;
-    }
+    return parsed;
   } catch (error) {
     if (!BUNDLED_HOLIDAYS[validYear]) {
       throw error;
@@ -126,25 +126,22 @@ function normalizeHolidayRecord(item: unknown, year: number): Holiday | undefine
         : typeof item.mes === "number" && typeof item.dia === "number"
           ? `${year}-${String(item.mes).padStart(2, "0")}-${String(item.dia).padStart(2, "0")}`
           : undefined;
-  const name =
-    typeof item.title === "string"
-      ? item.title
-      : typeof item.nombre === "string"
-        ? item.nombre
-        : typeof item.descripcion === "string"
-          ? item.descripcion
-          : undefined;
+  const name = sanitizeOptionalText(item.title ?? item.nombre ?? item.descripcion, {
+    maxLength: 120,
+    singleLine: true,
+  });
+  const isoDate = date?.slice(0, 10);
 
-  if (!date || !name) {
+  if (!isoDate || !isIsoDate(isoDate) || !name) {
     return undefined;
   }
 
   return holiday(
-    date.slice(0, 10),
+    isoDate,
     name,
     normalizeHolidayType(typeof item.type === "string" ? item.type : String(item.tipo ?? "civil")),
-    Boolean(item.inalienable ?? item.irrenunciable),
-    typeof item.extra === "string" ? item.extra : undefined,
+    item.inalienable === true || item.irrenunciable === true,
+    sanitizeOptionalText(item.extra, { maxLength: 120, singleLine: true }),
   );
 }
 
