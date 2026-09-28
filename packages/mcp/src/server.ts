@@ -57,13 +57,16 @@ export function createMcpServer(): McpServer {
         date: z
           .string()
           .regex(/^\d{4}-\d{2}-\d{2}$/)
-          .default(todayInChile()),
+          .optional()
+          .describe("Fecha YYYY-MM-DD. Por defecto, hoy en Chile."),
       }),
     },
     async ({ date }) => {
-      const holiday = await getHoliday(date);
+      // El default se calcula por llamada: un servidor MCP puede vivir varios dias.
+      const target = date ?? todayInChile();
+      const holiday = await getHoliday(target);
 
-      return textJson({ date, holiday: holiday ?? null, isHoliday: Boolean(holiday) });
+      return textJson({ date: target, holiday: holiday ?? null, isHoliday: Boolean(holiday) });
     },
   );
 
