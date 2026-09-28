@@ -18,9 +18,10 @@ const mismatches = manifests
   .filter(([, version]) => version !== expected);
 
 const versionSource = readFileSync("packages/sources/src/version.ts", "utf8");
+const sourceVersion = versionSource.match(/export const VERSION = "([^"]+)";/)?.[1];
 
-if (!versionSource.includes(`"${expected}"`)) {
-  mismatches.push(["packages/sources/src/version.ts", versionSource.match(/"(.+)"/)?.[1]]);
+if (sourceVersion !== expected) {
+  mismatches.push(["packages/sources/src/version.ts", sourceVersion]);
 }
 
 if (mismatches.length > 0) {
