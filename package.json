@@ -11,10 +11,11 @@
   "scripts": {
     "audit": "pnpm audit --audit-level moderate",
     "build": "pnpm -r run build",
-    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm run audit",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm smoke && pnpm run audit",
     "clean": "pnpm -r run clean",
     "format": "biome check --write .",
     "lint": "biome check .",
+    "smoke": "node scripts/smoke.mjs",
     "test": "pnpm -r run test",
     "typecheck": "pnpm -r run typecheck"
   },

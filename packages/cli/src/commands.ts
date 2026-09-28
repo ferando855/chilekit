@@ -1,4 +1,4 @@
-import { todayInChile } from "@chilekit/core";
+import { assertIsoDate, currentYearInChile, todayInChile } from "@chilekit/core";
 import { startMcpServer } from "@chilekit/mcp";
 import {
   findCommuneInfo,
@@ -8,11 +8,12 @@ import {
   getUf,
   listCommunesByRegion,
   listRegions,
+  searchCommunes,
   searchOpenDatasets,
   searchSources,
   sourceManifests,
 } from "@chilekit/sources";
-import { Command } from "commander";
+import { Command, InvalidArgumentError } from "commander";
 
 import { printJson, printRows } from "./output.js";
 
@@ -38,15 +39,15 @@ export function createProgram(): Command {
   program
     .command("feriados")
     .description("Lista feriados chilenos de un año.")
-    .argument("[year]", "año a consultar", String(new Date().getFullYear()))
+    .argument("[year]", "año a consultar", parseInteger("año", 1900, 2200), currentYearInChile())
     .option("--json", "emite salida JSON para agentes y scripts")
     .option("--live", "consulta la fuente remota cuando este disponible")
-    .action(async (year: string, options: JsonCommandOptions & { live?: boolean }) => {
+    .action(async (year: number, options: JsonCommandOptions & { live?: boolean }) => {
       const output = getOutputOptions(program, options);
-      const holidays = await getHolidays(Number(year), { live: options.live });
+      const holidays = await getHolidays(year, { live: options.live });
 
       if (output.json) {
-        printJson({ holidays, source: "feriados", year: Number(year) });
+        printJson({ holidays, source: "feriados", year });
         return;
       }
 
@@ -64,7 +65,7 @@ export function createProgram(): Command {
   program
     .command("feriado")
     .description("Indica si una fecha ISO es feriado en Chile.")
-    .argument("[date]", "fecha YYYY-MM-DD", todayInChile())
+    .argument("[date]", "fecha YYYY-MM-DD", parseIsoDate, todayInChile())
     .option("--json", "emite salida JSON para agentes y scripts")
     .option("--live", "consulta la fuente remota cuando este disponible")
     .action(async (date: string, options: JsonCommandOptions & { live?: boolean }) => {
@@ -152,9 +153,19 @@ export function createProgram(): Command {
     .action((name: string, options: JsonCommandOptions) => {
       const output = getOutputOptions(program, options);
       const commune = findCommuneInfo(name);
+      const candidates = commune ? [] : searchCommunes(name);
 
       if (output.json) {
-        printJson({ commune: commune ?? null, query: name });
+        printJson({ candidates, commune: commune ?? null, query: name });
+        return;
+      }
+
+      if (!commune && candidates.length > 0) {
+        process.stdout.write(`"${name}" es ambiguo. Coincidencias:\n`);
+        printRows(
+          ["comuna", "provincia", "region"],
+          candidates.map((item) => [item.name, item.provinceName, item.regionName]),
+        );
         return;
       }
 
@@ -174,10 +185,10 @@ export function createProgram(): Command {
     .description("Busca datasets en datos.gob.cl.")
     .argument("<query>", "termino de busqueda")
     .option("--json", "emite salida JSON para agentes y scripts")
-    .option("--rows <rows>", "cantidad de resultados", "5")
-    .action(async (query: string, options: JsonCommandOptions & { rows: string }) => {
+    .option("--rows <rows>", "cantidad de resultados (1-20)", parseInteger("rows", 1, 20), 5)
+    .action(async (query: string, options: JsonCommandOptions & { rows: number }) => {
       const output = getOutputOptions(program, options);
-      const datasets = await searchOpenDatasets(query, { rows: Number(options.rows) });
+      const datasets = await searchOpenDatasets(query, { rows: options.rows });
 
       if (output.json) {
         printJson({ datasets, query });
@@ -200,10 +211,10 @@ export function createProgram(): Command {
     .description("Busca fuentes ChileKit por texto.")
     .argument("<query>", "termino de busqueda")
     .option("--json", "emite salida JSON para agentes y scripts")
-    .option("--limit <limit>", "cantidad de resultados", "10")
-    .action((query: string, options: JsonCommandOptions & { limit: string }) => {
+    .option("--limit <limit>", "cantidad de resultados (1-50)", parseInteger("limit", 1, 50), 10)
+    .action((query: string, options: JsonCommandOptions & { limit: number }) => {
       const output = getOutputOptions(program, options);
-      const sources = searchSources(query, { limit: Number(options.limit) });
+      const sources = searchSources(query, { limit: options.limit });
 
       if (output.json) {
         printJson({ query, sources });
@@ -288,4 +299,24 @@ function getOutputOptions(program: Command, commandOptions?: JsonCommandOptions)
   return {
     json: Boolean(program.opts<GlobalOptions>().json || commandOptions?.json),
   };
+}
+
+function parseInteger(label: string, min: number, max: number) {
+  return (value: string): number => {
+    const parsed = Number(value);
+
+    if (!/^\d+$/.test(value.trim()) || parsed < min || parsed > max) {
+      throw new InvalidArgumentError(`${label} debe ser un entero entre ${min} y ${max}.`);
+    }
+
+    return parsed;
+  };
+}
+
+function parseIsoDate(value: string): string {
+  try {
+    return assertIsoDate(value);
+  } catch {
+    throw new InvalidArgumentError("se esperaba una fecha valida YYYY-MM-DD.");
+  }
 }

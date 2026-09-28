@@ -1,5 +1,5 @@
 import type { EconomicIndicator } from "@chilekit/core";
-import { todayInChile, toMindicadorDate } from "@chilekit/core";
+import { toChileDate, todayInChile, toMindicadorDate } from "@chilekit/core";
 
 type FetchLike = typeof fetch;
 
@@ -49,7 +49,7 @@ export async function getMindicadorIndicator(
 
   return {
     code: payload.codigo,
-    date: latest.fecha.slice(0, 10),
+    date: toChileDate(latest.fecha),
     name: payload.nombre,
     sourceId: "mindicador",
     unit: payload.unidad_medida,

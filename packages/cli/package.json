@@ -8,7 +8,7 @@
     "access": "public"
   },
   "bin": {
-    "chilekit": "./dist/index.js"
+    "chilekit": "./dist/bin.js"
   },
   "files": [
     "dist",
@@ -21,8 +21,8 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --sourcemap --clean",
-    "chilekit": "tsx src/index.ts",
+    "build": "tsup src/index.ts src/bin.ts --format esm --dts --sourcemap --clean",
+    "chilekit": "tsx src/bin.ts",
     "clean": "rm -rf dist",
     "test": "vitest run --config ../../vitest.config.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"

@@ -25,7 +25,13 @@ export function printRows(
   }
 }
 
-export function printError(error: unknown): void {
+export function printError(error: unknown, options: OutputOptions = {}): void {
   const message = error instanceof Error ? error.message : String(error);
+
+  if (options.json) {
+    process.stderr.write(`${JSON.stringify({ error: { message } })}\n`);
+    return;
+  }
+
   process.stderr.write(`chilekit: ${message}\n`);
 }
