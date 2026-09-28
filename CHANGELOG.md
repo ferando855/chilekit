@@ -15,6 +15,8 @@
   cambios de hora de Chile continental, Magallanes e Isla de Pascua, sin red.
 - `en-palabras` y tool `amount_to_words`: montos en palabras segun la RAE para pesos,
   UF, UTM, dolares y euros, con el formato usual de documentos.
+- Tools MCP con `structuredContent` ademas del texto JSON.
+- `server.json` y job de release para publicar en el registro oficial de MCP.
 
 ## 0.2.0
 

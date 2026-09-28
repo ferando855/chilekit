@@ -24,6 +24,26 @@ if (sourceVersion !== expected) {
   mismatches.push(["packages/sources/src/version.ts", sourceVersion]);
 }
 
+// El registro MCP exige que server.json y el paquete npm declaren la misma version y nombre.
+const server = JSON.parse(readFileSync("server.json", "utf8"));
+const mcpPackage = JSON.parse(readFileSync("packages/mcp/package.json", "utf8"));
+
+for (const [label, version] of [
+  ["server.json version", server.version],
+  ["server.json packages[0].version", server.packages?.[0]?.version],
+]) {
+  if (version !== expected) {
+    mismatches.push([label, version]);
+  }
+}
+
+if (mcpPackage.mcpName !== server.name) {
+  mismatches.push([
+    "packages/mcp/package.json mcpName",
+    `${mcpPackage.mcpName} (server.json: ${server.name})`,
+  ]);
+}
+
 if (mismatches.length > 0) {
   for (const [path, version] of mismatches) {
     console.error(`${path}: ${version} (esperado ${expected})`);

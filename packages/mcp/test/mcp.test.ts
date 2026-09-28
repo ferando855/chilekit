@@ -96,9 +96,20 @@ describe("mcp", () => {
     expect(ambiguous.text).toMatch(/ambigua/);
   });
 
-  it("formats tool responses as JSON text", () => {
+  it("formats tool responses as structured content plus JSON text", () => {
     expect(textJson({ ok: true })).toEqual({
       content: [{ text: '{\n  "ok": true\n}', type: "text" }],
+      structuredContent: { ok: true },
     });
+    expect(textJson([1, 2])).not.toHaveProperty("structuredContent");
+  });
+
+  it("returns structured content from real tools", async () => {
+    const result = await client.callTool({
+      arguments: { rut: "12.345.678-5" },
+      name: "validate_rut",
+    });
+
+    expect(result.structuredContent).toMatchObject({ valid: true });
   });
 });
