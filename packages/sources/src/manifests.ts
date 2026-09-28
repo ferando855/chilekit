@@ -73,6 +73,26 @@ export const sourceManifests = [
     ],
   },
   {
+    id: "hora-oficial",
+    name: "Hora oficial de Chile",
+    category: "territorio",
+    official: false,
+    auth: "none",
+    formats: ["json"],
+    freshness: "event-driven",
+    status: "available",
+    docsUrl: "https://www.iana.org/time-zones",
+    notes:
+      "Calculada localmente con la base de husos horarios IANA incluida en Node (America/Santiago, America/Punta_Arenas, Pacific/Easter). Los cambios de hora los fija un decreto; IANA los incorpora y llegan al actualizar Node.",
+    tools: [
+      {
+        name: "get_chile_time",
+        description: "Hora actual en Chile continental, Magallanes o Isla de Pascua.",
+      },
+      { name: "get_time_changes", description: "Cambios de hora de un año en cada huso de Chile." },
+    ],
+  },
+  {
     id: "banco-central",
     name: "Banco Central de Chile",
     category: "economia",

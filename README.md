@@ -113,6 +113,8 @@ es el contrato recomendado ([docs/agents.md](docs/agents.md)). También hay una
 | `chilekit uf` · `dolar` · `utm` | Atajos |
 | `chilekit convertir <monto> <de> [a]` | Convierte entre pesos, UF, UTM, dólar y euro (`3,5 uf`, `1.500.000 clp uf`) |
 | `chilekit reajustar <monto> <desde> [hasta]` | Reajusta pesos por la variación de la UF entre dos fechas |
+| `chilekit hora [--comuna]` | Hora oficial y próximo cambio de hora (continental, Magallanes, Isla de Pascua) |
+| `chilekit cambio-hora [año]` | Cambios de hora del año en cada huso |
 | `chilekit rut <rut>` | Valida dígito verificador localmente |
 | `chilekit regiones` | Las 16 regiones |
 | `chilekit comunas --region <region>` | Comunas de una región (`"Biobío"`, `8`, `VIII`, `RM`, `CL-VS`) |
@@ -138,6 +140,7 @@ bancario.
 | `get_economic_indicator` · `get_latest_indicators` | ✓ | Indicadores económicos |
 | `convert_currency` · `adjust_by_uf` | ✓ | Conversión CLP/UF/UTM/USD/EUR y reajuste por UF |
 | `search_open_datasets` | ✓ | Datasets de datos.gob.cl |
+| `get_chile_time` · `get_time_changes` | | Hora oficial y cambios de hora, sin red |
 | `validate_rut` | | Dígito verificador, local |
 | `list_regions` · `list_communes` · `get_commune_info` | | División territorial |
 | `search_chile_sources` · `get_source_manifest` | | Catálogo de fuentes |

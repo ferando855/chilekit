@@ -11,6 +11,8 @@
   campos `region`, `commune`, `include_bank_holiday` en MCP): 7 de junio en Arica y
   Parinacota, 20 de agosto en Chillan y Chillan Viejo y 31 de diciembre bancario, tambien
   en el calculo de dias habiles.
+- `hora` y `cambio-hora`, tools `get_chile_time` y `get_time_changes`: hora oficial y
+  cambios de hora de Chile continental, Magallanes e Isla de Pascua, sin red.
 
 ## 0.2.0
 

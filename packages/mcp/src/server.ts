@@ -1,4 +1,4 @@
-import { todayInChile, validateRut } from "@chilekit/core";
+import { getTimeChanges, todayInChile, validateRut } from "@chilekit/core";
 import {
   addBusinessDays,
   adjustByUf,
@@ -12,6 +12,7 @@ import {
   getLatestIndicators,
   getNextHoliday,
   getSourceManifest,
+  getTimeFor,
   INDICATOR_CODES,
   listCommunesByRegion,
   listRegions,
@@ -262,6 +263,35 @@ export function createMcpServer(): McpServer {
           saturdayIsBusinessDay: saturday_is_business_day,
         }),
       ),
+  );
+
+  server.registerTool(
+    "get_chile_time",
+    {
+      title: "Hora oficial de Chile",
+      annotations: LOCAL_TOOL,
+      description:
+        "Hora local actual y proximo cambio de hora en Chile. Sin ubicacion usa Chile continental; con region o comuna usa su huso (Magallanes no cambia de hora; Isla de Pascua tiene huso propio).",
+      inputSchema: z.object({
+        commune: z.string().min(1).max(100).optional(),
+        region: z.string().min(1).max(100).optional(),
+      }),
+    },
+    async ({ commune, region }) => textJson(getTimeFor({ commune, region })),
+  );
+
+  server.registerTool(
+    "get_time_changes",
+    {
+      title: "Cambios de hora en Chile",
+      annotations: LOCAL_TOOL,
+      description:
+        "Cambios de hora de un año en Chile continental e Isla de Pascua: instante UTC, hora local antes y despues, y si los relojes se atrasan o adelantan.",
+      inputSchema: z.object({
+        year: z.number().int().min(1970).max(2200),
+      }),
+    },
+    async ({ year }) => textJson({ changes: getTimeChanges(year), year }),
   );
 
   server.registerTool(

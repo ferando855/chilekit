@@ -1,6 +1,8 @@
 import {
   assertIsoDate,
+  CHILE_TIME_ZONES,
   currentYearInChile,
+  getTimeChanges,
   parseChileanNumber,
   todayInChile,
   validateRut,
@@ -18,6 +20,7 @@ import {
   getLatestIndicators,
   getNextHoliday,
   getSourceManifest,
+  getTimeFor,
   INDICATOR_CODES,
   listCommunesByRegion,
   listRegions,
@@ -326,6 +329,56 @@ export function createProgram(): Command {
     });
 
   program
+    .command("hora")
+    .description("Hora oficial actual en Chile y el proximo cambio de hora.")
+    .option("--region <region>", "region, para usar su huso horario")
+    .option("--comuna <comuna>", "comuna, para usar su huso horario (ej. Isla de Pascua)")
+    .option("--json", "emite salida JSON para agentes y scripts")
+    .action((options: JsonCommandOptions & { region?: string; comuna?: string }) => {
+      const output = getOutputOptions(program, options);
+      const time = getTimeFor({ commune: options.comuna, region: options.region });
+
+      if (output.json) {
+        printJson(time);
+        return;
+      }
+
+      process.stdout.write(
+        `${time.localDateTime.replace("T", " ")} (UTC${time.utcOffset}) · ${time.name}\n`,
+      );
+      process.stdout.write(
+        time.nextChange
+          ? `Proximo cambio: ${describeTimeChange(time.nextChange)}\n`
+          : "Este huso no tiene cambios de hora programados.\n",
+      );
+    });
+
+  program
+    .command("cambio-hora")
+    .description("Cambios de hora del año en cada huso horario de Chile.")
+    .argument("[year]", "año a consultar", parseInteger("año", 1970, 2200), currentYearInChile())
+    .option("--json", "emite salida JSON para agentes y scripts")
+    .action((year: number, options: JsonCommandOptions) => {
+      const output = getOutputOptions(program, options);
+      const changes = getTimeChanges(year);
+
+      if (output.json) {
+        printJson({ changes, year });
+        return;
+      }
+
+      printRows(
+        ["huso", "cambio", "utc"],
+        changes.map((change) => [
+          CHILE_TIME_ZONES[change.zone].name,
+          describeTimeChange(change),
+          `${change.offsetBefore} -> ${change.offsetAfter}`,
+        ]),
+      );
+      process.stdout.write("Magallanes mantiene UTC-3 todo el año.\n");
+    });
+
+  program
     .command("rut")
     .description(
       "Valida formato y digito verificador de un RUT, localmente y sin consultar identidad.",
@@ -570,6 +623,17 @@ function printHolidayList(title: string, holidays: Array<{ date: string; name: s
     ["fecha", "nombre"],
     holidays.map((holiday) => [holiday.date, holiday.name]),
   );
+}
+
+function describeTimeChange(change: {
+  localBefore: string;
+  localAfter: string;
+  clocks: string;
+}): string {
+  const [day, time] = change.localBefore.split("T");
+  const after = change.localAfter.split("T")[1];
+
+  return `${day} a las ${time} se ${change.clocks === "atrasar" ? "atrasan" : "adelantan"} los relojes a las ${after}`;
 }
 
 function parseAmount(value: string): number {
