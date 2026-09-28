@@ -1,7 +1,15 @@
-import { assertIsoDate, currentYearInChile, todayInChile, validateRut } from "@chilekit/core";
+import {
+  assertIsoDate,
+  currentYearInChile,
+  parseChileanNumber,
+  todayInChile,
+  validateRut,
+} from "@chilekit/core";
 import { startMcpServer } from "@chilekit/mcp";
 import {
   addBusinessDays,
+  adjustByUf,
+  convertCurrency,
   countBusinessDays,
   findCommuneInfo,
   getHoliday,
@@ -13,6 +21,7 @@ import {
   INDICATOR_CODES,
   listCommunesByRegion,
   listRegions,
+  resolveCurrencyUnit,
   searchCommunes,
   searchOpenDatasets,
   searchSources,
@@ -188,6 +197,73 @@ export function createProgram(): Command {
         await printIndicator(program, code, date, options);
       });
   }
+
+  program
+    .command("convertir")
+    .description("Convierte montos entre pesos, UF, UTM, dolar y euro.")
+    .argument("<monto>", "monto, por ejemplo 3,5 o 1.500.000", parseAmount)
+    .argument("<de>", "unidad de origen: clp, uf, utm, dolar o euro")
+    .argument("[a]", "unidad de destino", "clp")
+    .option("--fecha <fecha>", "fecha del valor YYYY-MM-DD (por defecto hoy)", parseIsoDate)
+    .option("--json", "emite salida JSON para agentes y scripts")
+    .action(
+      async (
+        amount: number,
+        from: string,
+        to: string,
+        options: JsonCommandOptions & { fecha?: string },
+      ) => {
+        const output = getOutputOptions(program, options);
+        const result = await convertCurrency(
+          amount,
+          resolveCurrencyUnit(from),
+          resolveCurrencyUnit(to),
+          { date: options.fecha },
+        );
+
+        if (output.json) {
+          printJson(result);
+          return;
+        }
+
+        process.stdout.write(
+          `${formatAmount(result.amount, result.from)} = ${formatAmount(result.result, result.to)} (${result.date})\n`,
+        );
+
+        for (const rate of result.rates) {
+          const note = rate.date === rate.requestedDate ? "" : ` (ultimo publicado, ${rate.date})`;
+          process.stdout.write(
+            `  1 ${rate.code.toUpperCase()} = $${formatNumber(rate.value)}${note}\n`,
+          );
+        }
+      },
+    );
+
+  program
+    .command("reajustar")
+    .description("Reajusta un monto en pesos segun la variacion de la UF entre dos fechas.")
+    .argument("<monto>", "monto en pesos, por ejemplo 1.000.000", parseAmount)
+    .argument("<desde>", "fecha original YYYY-MM-DD", parseIsoDate)
+    .argument("[hasta]", "fecha de reajuste YYYY-MM-DD (por defecto hoy)", parseIsoDate)
+    .option("--json", "emite salida JSON para agentes y scripts")
+    .action(
+      async (amount: number, from: string, to: string | undefined, options: JsonCommandOptions) => {
+        const output = getOutputOptions(program, options);
+        const result = await adjustByUf(amount, from, to);
+
+        if (output.json) {
+          printJson(result);
+          return;
+        }
+
+        process.stdout.write(
+          `${formatAmount(result.amount, "clp")} de ${result.from} = ${formatAmount(result.result, "clp")} al ${result.to} (${result.variationPercent >= 0 ? "+" : ""}${formatNumber(result.variationPercent)}%)\n`,
+        );
+        process.stdout.write(
+          `  UF ${result.from}: $${formatNumber(result.ufFrom.value)} · UF ${result.to}: $${formatNumber(result.ufTo.value)}\n`,
+        );
+      },
+    );
 
   program
     .command("indicadores")
@@ -453,6 +529,24 @@ function printHolidayList(title: string, holidays: Array<{ date: string; name: s
     ["fecha", "nombre"],
     holidays.map((holiday) => [holiday.date, holiday.name]),
   );
+}
+
+function parseAmount(value: string): number {
+  try {
+    return parseChileanNumber(value);
+  } catch (error) {
+    throw new InvalidArgumentError(error instanceof Error ? error.message : String(error));
+  }
+}
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat("es-CL", { maximumFractionDigits: 4 }).format(value);
+}
+
+function formatAmount(value: number, unit: string): string {
+  return unit === "clp"
+    ? `$${formatNumber(value)}`
+    : `${formatNumber(value)} ${unit.toUpperCase()}`;
 }
 
 function parseInteger(label: string, min: number, max: number) {

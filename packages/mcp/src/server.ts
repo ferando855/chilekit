@@ -1,6 +1,9 @@
 import { todayInChile, validateRut } from "@chilekit/core";
 import {
   addBusinessDays,
+  adjustByUf,
+  CURRENCY_UNITS,
+  convertCurrency,
   countBusinessDays,
   findCommuneInfo,
   getHoliday,
@@ -107,6 +110,46 @@ export function createMcpServer(): McpServer {
       }),
     },
     async ({ date, indicator }) => textJson({ indicator: await getIndicator(indicator, { date }) }),
+  );
+
+  server.registerTool(
+    "convert_currency",
+    {
+      title: "Convertir pesos, UF, UTM, dolar y euro",
+      annotations: NETWORK_TOOL,
+      description:
+        "Convierte un monto entre CLP, UF, UTM, dolar observado y euro con el valor vigente en una fecha (por defecto hoy). Para dolar y euro en dias sin publicacion usa el ultimo valor publicado e indica su fecha en rates.",
+      inputSchema: z.object({
+        amount: z.number().finite().min(-1e15).max(1e15),
+        date: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .optional(),
+        from: z.enum(CURRENCY_UNITS),
+        to: z.enum(CURRENCY_UNITS).default("clp"),
+      }),
+    },
+    async ({ amount, date, from, to }) =>
+      textJson(await convertCurrency(amount, from, to, { date })),
+  );
+
+  server.registerTool(
+    "adjust_by_uf",
+    {
+      title: "Reajustar monto por UF",
+      annotations: NETWORK_TOOL,
+      description:
+        "Reajusta un monto en pesos segun la variacion de la UF entre dos fechas (mecanismo estandar para indexar deudas, arriendos y contratos a la inflacion). Devuelve factor, variacion porcentual y los valores de UF usados.",
+      inputSchema: z.object({
+        amount: z.number().finite().min(-1e15).max(1e15),
+        from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        to: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .optional(),
+      }),
+    },
+    async ({ amount, from, to }) => textJson(await adjustByUf(amount, from, to)),
   );
 
   server.registerTool(

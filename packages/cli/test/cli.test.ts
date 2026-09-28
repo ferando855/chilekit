@@ -64,6 +64,9 @@ describe("cli", () => {
     [["datasets", "salud", "--rows", "1000"]],
     [["sumar-habiles", "2026-01-01", "0"]],
     [["habiles", "2026-01-01", "ayer"]],
+    [["convertir", "abc", "uf"]],
+    [["convertir", "1,234.56", "uf"]],
+    [["reajustar", "1000", "2020-02-30"]],
   ])("rejects invalid arguments: %j", async (args) => {
     await expect(run(args)).rejects.toThrow();
   });
