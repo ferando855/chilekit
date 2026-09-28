@@ -38,8 +38,31 @@ describe("mcp", () => {
         "list_communes",
         "search_chile_sources",
         "search_open_datasets",
+        "get_latest_indicators",
+        "get_next_holiday",
+        "count_business_days",
+        "add_business_days",
+        "validate_rut",
+        "list_regions",
       ]),
     );
+    expect(tools.every((tool) => tool.annotations?.readOnlyHint === true)).toBe(true);
+  });
+
+  it("computes business-day deadlines", async () => {
+    const { isError, text } = await callJson("add_business_days", {
+      days: 1,
+      from: "2026-09-17",
+    });
+
+    expect(isError).toBe(false);
+    expect(JSON.parse(text)).toMatchObject({ date: "2026-09-21" });
+  });
+
+  it("validates RUTs locally", async () => {
+    const { text } = await callJson("validate_rut", { rut: "12.345.678-5" });
+
+    expect(JSON.parse(text)).toMatchObject({ formatted: "12.345.678-5", valid: true });
   });
 
   it("answers holiday queries from bundled data", async () => {

@@ -16,25 +16,25 @@ describe("feriados", () => {
   });
 
   it("parses the Boostr payload for non-bundled years", async () => {
-    const holidays = await getHolidays(2027, {
+    const holidays = await getHolidays(2028, {
       fetchImpl: async () =>
         Response.json({
           data: [
             {
-              date: "2027-01-01",
+              date: "2028-01-01",
               extra: "Civil e Irrenunciable",
               inalienable: true,
               title: "Año Nuevo",
               type: "Civil",
             },
-            { date: "2027-03-26", inalienable: false, title: "Viernes Santo", type: "Religioso" },
+            { date: "2028-04-14", inalienable: false, title: "Viernes Santo", type: "Religioso" },
           ],
           status: "success",
         }),
     });
 
     expect(holidays).toHaveLength(2);
-    expect(holidays[1]).toMatchObject({ date: "2027-03-26", type: "religious" });
+    expect(holidays[1]).toMatchObject({ date: "2028-04-14", type: "religious" });
   });
 
   it("rejects invalid dates", async () => {
