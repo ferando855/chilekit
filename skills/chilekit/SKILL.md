@@ -23,6 +23,7 @@ Si `chilekit` no esta instalado, usa `npx -y @chilekit/cli` en su lugar.
 | Un indicador | `chilekit indicador <uf\|dolar\|euro\|utm\|ipc\|imacec\|tpm\|ivp\|libra_cobre\|tasa_desempleo\|bitcoin> [YYYY-MM-DD] --json` |
 | Convertir montos | `chilekit convertir 3,5 uf --json` · `chilekit convertir 1.500.000 clp uf --json` |
 | Reajustar por UF | `chilekit reajustar 1.000.000 2020-03-15 --json` |
+| Hora actual o cambio de hora | `chilekit hora --json` · `chilekit cambio-hora 2027 --json` |
 | Validar RUT | `chilekit rut 12.345.678-5 --json` |
 | Comunas de una region | `chilekit comunas --region "Biobío" --json` |
 | Region de una comuna | `chilekit comuna "Puerto Montt" --json` |

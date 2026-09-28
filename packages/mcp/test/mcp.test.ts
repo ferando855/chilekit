@@ -46,6 +46,8 @@ describe("mcp", () => {
         "list_regions",
         "convert_currency",
         "adjust_by_uf",
+        "get_chile_time",
+        "get_time_changes",
       ]),
     );
     expect(tools.every((tool) => tool.annotations?.readOnlyHint === true)).toBe(true);
