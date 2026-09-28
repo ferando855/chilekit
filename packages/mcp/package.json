@@ -1,6 +1,6 @@
 {
   "name": "@chilekit/mcp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Servidor MCP stdio para ChileKit.",
   "mcpName": "io.github.ferando855/chilekit",
   "keywords": [

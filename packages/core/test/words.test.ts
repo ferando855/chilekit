@@ -45,6 +45,11 @@ describe("amountToWords", () => {
     [21, "uf", "veintiuna unidades de fomento"],
     [200, "uf", "doscientas unidades de fomento"],
     [221_000, "uf", "doscientas veintiuna mil unidades de fomento"],
+    // RAE admite "veintiún mil" y "veintiuna mil" ante sustantivo femenino; usamos la
+    // femenina, coherente con las centenas. Ver comentario en words.ts.
+    [21_000, "uf", "veintiuna mil unidades de fomento"],
+    [101_001, "uf", "ciento una mil una unidades de fomento"],
+    [21_000, "clp", "veintiún mil pesos"],
     [200_000_000, "uf", "doscientos millones de unidades de fomento"],
     [3.5, "uf", "tres coma cinco unidades de fomento"],
     [0.05, "uf", "cero coma cero cinco unidades de fomento"],

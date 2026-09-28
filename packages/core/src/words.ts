@@ -204,8 +204,11 @@ function belowMillion(value: number, form: Form): string {
   if (thousands === 1) {
     parts.push("mil");
   } else if (thousands > 1) {
-    // Ante "mil" se usa apocope en masculino ("veintiún mil") y concordancia en femenino
-    // ("doscientas mil unidades").
+    // Ante "mil" se usa apocope en masculino ("veintiún mil pesos") y concordancia en
+    // femenino ("veintiuna mil unidades", "doscientas mil unidades"). Con "mil" de por
+    // medio la RAE admite tambien "veintiún mil unidades"; se elige la femenina por
+    // coherencia con las centenas, que siempre concuerdan.
+    // https://www.rae.es/espanol-al-dia/veintiuna-mil-personas-o-veintiun-mil-personas
     parts.push(`${belowThousand(thousands, form === "feminine" ? "feminine" : "apocope")} mil`);
   }
 

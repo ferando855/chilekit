@@ -14,16 +14,24 @@
 - Supply chain: acciones fijadas por SHA, zizmor, dependency review, Scorecard y
   publicacion con provenance.
 
-## 0.3.x
+## 0.3.0
+
+- Conversion CLP/UF/UTM/dolar/euro y reajuste por UF.
+- Feriados regionales, comunales y bancario en feriados y dias habiles.
+- Hora oficial y cambios de hora de los tres husos de Chile.
+- Montos en palabras para documentos.
+- `structuredContent` en MCP y publicacion en el registro oficial de MCP.
+
+## 0.4.x
 
 - Banco Central BDE como fuente oficial de UF, dolar e IPC, con credenciales opcionales
   (mindicador publica el IPC con meses de retraso).
 - Feriados desde fuente oficial (BCN / datos.gob.cl) y verificacion cruzada con Boostr.
 - Cache local opcional para fuentes lentas o inestables.
 - Salida `csv` y `ndjson` en comandos de listas.
-- `structuredContent` y `outputSchema` en las tools MCP.
+- Build con `tsdown` para habilitar TypeScript 7.
 
-## 0.4.x
+## 0.5.x
 
 - ChileCompra con rate limits documentados.
 - BCN: busqueda de normas y citas.
