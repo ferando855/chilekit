@@ -44,6 +44,8 @@ describe("mcp", () => {
         "add_business_days",
         "validate_rut",
         "list_regions",
+        "convert_currency",
+        "adjust_by_uf",
       ]),
     );
     expect(tools.every((tool) => tool.annotations?.readOnlyHint === true)).toBe(true);

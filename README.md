@@ -111,6 +111,8 @@ es el contrato recomendado ([docs/agents.md](docs/agents.md)). También hay una
 | `chilekit indicadores` | Último valor de los 11 indicadores |
 | `chilekit indicador <codigo> [fecha]` | UF, dólar, euro, UTM, IPC, Imacec, TPM, IVP, cobre, desempleo, bitcoin |
 | `chilekit uf` · `dolar` · `utm` | Atajos |
+| `chilekit convertir <monto> <de> [a]` | Convierte entre pesos, UF, UTM, dólar y euro (`3,5 uf`, `1.500.000 clp uf`) |
+| `chilekit reajustar <monto> <desde> [hasta]` | Reajusta pesos por la variación de la UF entre dos fechas |
 | `chilekit rut <rut>` | Valida dígito verificador localmente |
 | `chilekit regiones` | Las 16 regiones |
 | `chilekit comunas --region <region>` | Comunas de una región (`"Biobío"`, `8`, `VIII`, `RM`, `CL-VS`) |
@@ -129,6 +131,7 @@ que solo excluyen domingos y festivos.
 | `get_holidays` · `get_holiday` · `get_next_holiday` | ✓ | Feriados (2026-2027 sin red) |
 | `count_business_days` · `add_business_days` | ✓ | Aritmética de días hábiles, con los feriados considerados |
 | `get_economic_indicator` · `get_latest_indicators` | ✓ | Indicadores económicos |
+| `convert_currency` · `adjust_by_uf` | ✓ | Conversión CLP/UF/UTM/USD/EUR y reajuste por UF |
 | `search_open_datasets` | ✓ | Datasets de datos.gob.cl |
 | `validate_rut` | | Dígito verificador, local |
 | `list_regions` · `list_communes` · `get_commune_info` | | División territorial |

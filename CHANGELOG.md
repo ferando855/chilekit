@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Agregado
+
+- `convertir` y tool `convert_currency`: montos entre pesos, UF, UTM, dolar y euro en
+  cualquier fecha, aceptando formato chileno (`1.500.000`, `3,5`).
+- `reajustar` y tool `adjust_by_uf`: reajuste de montos por variacion de la UF.
+
 ## 0.2.0
 
 ### Corregido
