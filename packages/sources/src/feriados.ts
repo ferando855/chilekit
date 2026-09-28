@@ -2,6 +2,7 @@ import type { Holiday } from "@chilekit/core";
 import { assertIsoDate, assertYear, isIsoDate, sanitizeOptionalText } from "@chilekit/core";
 
 import { type FetchJsonOptions, fetchJson } from "./http.js";
+import { findCommuneInfo, resolveRegion, searchCommunes } from "./territorio.js";
 
 const MAX_HOLIDAYS_PER_YEAR = 40;
 
@@ -50,14 +51,125 @@ export const BUNDLED_HOLIDAY_YEARS = Object.keys(BUNDLED_HOLIDAYS).map(Number);
 
 export interface GetHolidaysOptions extends FetchJsonOptions {
   live?: boolean;
+  /** Incluye feriados regionales de esta region (nombre, codigo, romano o ISO). */
+  region?: string;
+  /** Incluye feriados regionales y comunales de esta comuna. */
+  commune?: string;
+  /** Incluye el 31 de diciembre, dia sin atencion bancaria. */
+  bank?: boolean;
 }
 
+interface LocalHolidayRule {
+  monthDay: string;
+  name: string;
+  scope: NonNullable<Holiday["scope"]>;
+  appliesTo: string;
+  legalBasis: string;
+  sinceYear: number;
+  untilYear?: number;
+  regionIds?: string[];
+  communeIds?: string[];
+}
+
+// Feriados que no rigen en todo el pais y que las fuentes nacionales no incluyen.
+// Los feriados regionales de un solo año (p. ej. Ley 21.609 para 2023) se agregan con untilYear.
+export const LOCAL_HOLIDAY_RULES: readonly LocalHolidayRule[] = [
+  {
+    appliesTo: "Región de Arica y Parinacota",
+    legalBasis: "Ley 20.663",
+    monthDay: "06-07",
+    name: "Asalto y Toma del Morro de Arica",
+    regionIds: ["15"],
+    scope: "regional",
+    sinceYear: 2013,
+  },
+  {
+    appliesTo: "Comunas de Chillán y Chillán Viejo",
+    communeIds: ["16101", "16103"],
+    legalBasis: "Ley 20.768",
+    monthDay: "08-20",
+    name: "Nacimiento del Prócer de la Independencia",
+    scope: "communal",
+    sinceYear: 2014,
+  },
+  {
+    appliesTo: "Bancos e instituciones financieras, sin atención de público",
+    legalBasis: "Ley General de Bancos",
+    monthDay: "12-31",
+    name: "Feriado bancario",
+    scope: "bank",
+    sinceYear: 1900,
+  },
+];
+
+/**
+ * Feriados nacionales del año y, segun las opciones, los regionales, comunales y bancarios.
+ */
 export async function getHolidays(
   year: number,
   options: GetHolidaysOptions = {},
 ): Promise<Holiday[]> {
   const validYear = assertYear(year);
+  const local = localHolidaysFor(validYear, options);
+  const national = await getNationalHolidays(validYear, options);
+  const nationalDates = new Set(national.map((item) => item.date));
 
+  return [...national, ...local.filter((item) => !nationalDates.has(item.date))].sort((a, b) =>
+    a.date.localeCompare(b.date),
+  );
+}
+
+function localHolidaysFor(year: number, options: GetHolidaysOptions): Holiday[] {
+  const location = resolveLocation(options);
+
+  return LOCAL_HOLIDAY_RULES.filter(
+    (rule) => year >= rule.sinceYear && (rule.untilYear === undefined || year <= rule.untilYear),
+  )
+    .filter((rule) =>
+      rule.scope === "bank"
+        ? Boolean(options.bank)
+        : Boolean(
+            (location.regionId && rule.regionIds?.includes(location.regionId)) ||
+              (location.communeId && rule.communeIds?.includes(location.communeId)),
+          ),
+    )
+    .map((rule) => ({
+      ...holiday(
+        `${year}-${rule.monthDay}`,
+        rule.name,
+        rule.scope === "bank" ? "bank" : "civil",
+        false,
+      ),
+      appliesTo: rule.appliesTo,
+      legalBasis: rule.legalBasis,
+      scope: rule.scope,
+      sourceId: "chilekit",
+    }));
+}
+
+function resolveLocation(options: GetHolidaysOptions): { regionId?: string; communeId?: string } {
+  if (options.commune) {
+    const commune = findCommuneInfo(options.commune);
+
+    if (!commune) {
+      const candidates = searchCommunes(options.commune, 5).map((item) => item.name);
+      throw new Error(
+        candidates.length > 0
+          ? `Comuna ambigua: "${options.commune}". Coincidencias: ${candidates.join(", ")}`
+          : `Comuna no encontrada: ${options.commune}`,
+      );
+    }
+
+    return { communeId: commune.id, regionId: commune.regionId };
+  }
+
+  return options.region ? { regionId: resolveRegion(options.region).id } : {};
+}
+
+async function getNationalHolidays(
+  validYear: number,
+  options: GetHolidaysOptions,
+): Promise<Holiday[]> {
   if (!options.live && BUNDLED_HOLIDAYS[validYear]) {
     return [...BUNDLED_HOLIDAYS[validYear]];
   }
