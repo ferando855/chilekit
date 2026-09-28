@@ -39,5 +39,9 @@
     "tsx": "4.22.1",
     "typescript": "6.0.3",
     "vitest": "5.0.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ferando855/chilekit.git"
   }
 }

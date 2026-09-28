@@ -2,11 +2,30 @@
   "name": "@chilekit/core",
   "version": "0.1.0",
   "description": "Tipos y utilidades base de ChileKit.",
-  "type": "module",
+  "keywords": [
+    "chile",
+    "rut",
+    "utilidades"
+  ],
+  "homepage": "https://github.com/ferando855/chilekit/tree/main/packages/core#readme",
+  "bugs": {
+    "url": "https://github.com/ferando855/chilekit/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ferando855/chilekit.git",
+    "directory": "packages/core"
+  },
   "license": "MIT",
+  "author": "ferando855 (https://github.com/ferando855)",
+  "type": "module",
   "sideEffects": false,
+  "engines": {
+    "node": ">=22.12"
+  },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "files": [
     "dist",

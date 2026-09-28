@@ -1,123 +1,197 @@
 # ChileKit
 
-CLI-first y MCP open-source para consultar datos publicos chilenos desde terminales,
-scripts, agentes e IAs.
+[![CI](https://github.com/ferando855/chilekit/actions/workflows/ci.yml/badge.svg)](https://github.com/ferando855/chilekit/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/ferando855/chilekit/actions/workflows/codeql.yml/badge.svg)](https://github.com/ferando855/chilekit/actions/workflows/codeql.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ferando855/chilekit/badge)](https://scorecard.dev/viewer/?uri=github.com/ferando855/chilekit)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-ChileKit nace como un toolkit personal y publico para juntar fuentes chilenas utiles en
-un solo repo, con una regla sencilla: datos publicos, fuentes trazables y cero
-rutificadores.
-
-## Estado
-
-Version inicial: `0.1.0`
-
-Paquetes:
-
-- `@chilekit/core`: tipos, normalizacion y utilidades seguras.
-- `@chilekit/sources`: manifiestos, conectores y datasets base.
-- `@chilekit/cli`: ejecutable `chilekit`.
-- `@chilekit/mcp`: servidor MCP por stdio para agentes.
-
-## Instalacion local
+Datos públicos de Chile para terminales, scripts y agentes de IA: feriados, días hábiles,
+UF, dólar, UTM, regiones, comunas y datasets de datos.gob.cl. Funciona como **CLI** con
+salida JSON y como **servidor MCP**.
 
 ```bash
-pnpm install
-pnpm build
-pnpm --filter @chilekit/cli chilekit --help
+$ npx @chilekit/cli sumar-habiles 2026-09-28 20
+2026-09-28 + 20 dias habiles = 2026-10-27
+Feriados saltados:
+fecha       nombre
+----------  -----------------------
+2026-10-12  Encuentro de Dos Mundos
 ```
 
-Tambien puedes ejecutar el binario compilado directamente:
+Los modelos de lenguaje no saben el valor de la UF de hoy, no conocen los feriados que
+agrega cada ley y se equivocan contando días hábiles. ChileKit les da esas respuestas
+desde fuentes trazables, sin credenciales y sin rutificadores.
+
+> **English:** ChileKit is a CLI and MCP server that gives AI agents reliable access to
+> Chilean public data (holidays, business-day math, economic indicators, territorial
+> divisions, open datasets), hardened for agent use: host allowlist, timeouts, size caps,
+> and sanitization of third-party text. See [docs/threat-model.md](docs/threat-model.md).
+
+## Conectar a tu agente
+
+El servidor MCP corre por stdio con `npx -y @chilekit/mcp`. No requiere API keys.
+
+<details open>
+<summary><b>Claude Code</b></summary>
 
 ```bash
-node packages/cli/dist/index.js feriados 2026
+claude mcp add chilekit -- npx -y @chilekit/mcp
 ```
+</details>
 
-## Comandos MVP
+<details>
+<summary><b>Claude Desktop</b> (<code>claude_desktop_config.json</code>)</summary>
 
-```bash
-chilekit feriados 2026
-chilekit uf hoy
-chilekit comunas --region "Biobío"
-chilekit datasets "salud"
-chilekit search "ipc abril 2026"
-chilekit source banco-central
-chilekit mcp
+```json
+{
+  "mcpServers": {
+    "chilekit": {
+      "command": "npx",
+      "args": ["-y", "@chilekit/mcp"]
+    }
+  }
+}
 ```
+</details>
 
-Cada comando soporta `--json` para integraciones:
+<details>
+<summary><b>Cursor</b> (<code>.cursor/mcp.json</code>)</summary>
 
-```bash
-chilekit feriados 2026 --json
-chilekit uf hoy --json
-chilekit comunas --region "Biobío" --json
+```json
+{
+  "mcpServers": {
+    "chilekit": {
+      "command": "npx",
+      "args": ["-y", "@chilekit/mcp"]
+    }
+  }
+}
 ```
+</details>
 
-Para agentes, el contrato recomendado es CLI-first. Ver
-[docs/agents.md](docs/agents.md).
+<details>
+<summary><b>VS Code</b> (<code>.vscode/mcp.json</code>)</summary>
 
-## MCP
-
-El servidor MCP corre por stdio. Es util para clientes con buen soporte de tools
-persistentes; para consultas simples de agentes, prefiere `chilekit <command> --json`.
-
-```bash
-chilekit mcp
+```json
+{
+  "servers": {
+    "chilekit": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@chilekit/mcp"]
+    }
+  }
+}
 ```
+</details>
 
-Herramientas incluidas en `0.1.0`:
+<details>
+<summary><b>Codex CLI</b> (<code>~/.codex/config.toml</code>)</summary>
 
-- `search_chile_sources(query)`
-- `get_holidays(year)`
-- `get_holiday(date)`
-- `get_economic_indicator(indicator, date?)`
-- `list_communes(region)`
-- `get_commune_info(name)`
-- `search_open_datasets(query)`
+```toml
+[mcp_servers.chilekit]
+command = "npx"
+args = ["-y", "@chilekit/mcp"]
+```
+</details>
 
-## Fuentes iniciales
+¿Tu agente ejecuta comandos de shell? Entonces no necesitas MCP: `chilekit <comando> --json`
+es el contrato recomendado ([docs/agents.md](docs/agents.md)). También hay una
+[Agent Skill](skills/chilekit/SKILL.md) lista para copiar.
 
-ChileKit separa fuente y herramienta. Cada fuente tiene manifiesto con `id`, nombre,
-categoria, autenticacion, formatos, frescura, oficialidad y tools disponibles.
+## Comandos
 
-Fuentes registradas en `0.1.0`:
+| Comando | Qué hace |
+|---|---|
+| `chilekit feriados [año]` | Feriados del año |
+| `chilekit feriado [fecha]` | ¿Es feriado esa fecha? |
+| `chilekit proximo-feriado [fecha]` | Próximo feriado y cuántos días faltan |
+| `chilekit habiles <desde> <hasta>` | Días hábiles en `(desde, hasta]` |
+| `chilekit sumar-habiles <fecha> <n>` | Fecha tras sumar `n` días hábiles |
+| `chilekit indicadores` | Último valor de los 11 indicadores |
+| `chilekit indicador <codigo> [fecha]` | UF, dólar, euro, UTM, IPC, Imacec, TPM, IVP, cobre, desempleo, bitcoin |
+| `chilekit uf` · `dolar` · `utm` | Atajos |
+| `chilekit rut <rut>` | Valida dígito verificador localmente |
+| `chilekit regiones` | Las 16 regiones |
+| `chilekit comunas --region <region>` | Comunas de una región (`"Biobío"`, `8`, `VIII`, `RM`, `CL-VS`) |
+| `chilekit comuna <nombre>` | Provincia y región de una comuna |
+| `chilekit datasets <query>` | Busca en datos.gob.cl |
+| `chilekit sources` · `source <id>` · `search <query>` | Catálogo de fuentes |
+| `chilekit mcp` | Servidor MCP por stdio |
 
-- Feriados legales via Boostr/FeriadosApp como fuente operativa no oficial, con
-  fallback local para 2026 y respaldo legal futuro via BCN.
-- Division territorial via `@clregions/data`, que compila datos territoriales desde
-  fuentes como BCN/SIIT, normas y codigos territoriales.
-- Indicadores economicos via `mindicador.cl` para el MVP sin credenciales, y manifiesto
-  preparado para Banco Central.
-- Datos abiertos via CKAN de `datos.gob.cl`.
-- Manifiestos preparados para ChileCompra, BCN, INE, SERVEL, SINCA, CNE, IDE Chile y
-  SNIFA/SMA.
+Todos aceptan `--json`. `habiles` y `sumar-habiles` aceptan `--sabado-habil` para plazos
+que solo excluyen domingos y festivos.
+
+## Tools MCP
+
+| Tool | Red | Descripción |
+|---|:---:|---|
+| `get_holidays` · `get_holiday` · `get_next_holiday` | ✓ | Feriados (2026-2027 sin red) |
+| `count_business_days` · `add_business_days` | ✓ | Aritmética de días hábiles, con los feriados considerados |
+| `get_economic_indicator` · `get_latest_indicators` | ✓ | Indicadores económicos |
+| `search_open_datasets` | ✓ | Datasets de datos.gob.cl |
+| `validate_rut` | | Dígito verificador, local |
+| `list_regions` · `list_communes` · `get_commune_info` | | División territorial |
+| `search_chile_sources` · `get_source_manifest` | | Catálogo de fuentes |
+
+Todas son de solo lectura y lo declaran con `readOnlyHint`. Las que salen a internet
+declaran `openWorldHint`.
+
+## Fuentes
+
+Cada fuente tiene un manifiesto con origen, oficialidad, autenticación, formatos y
+frescura esperada (`chilekit source <id>`).
+
+| Fuente | Datos | Oficial | Estado |
+|---|---|:---:|---|
+| [Boostr / FeriadosApp](https://docs.boostr.cl/reference/holidays-info) | Feriados | No | Disponible, con snapshot local 2026-2027 |
+| [@clregions/data](https://github.com/piperubio/clregions) | Regiones y comunas (BCN/SIIT, ISO) | No | Disponible, sin red |
+| [mindicador.cl](https://mindicador.cl/) | Indicadores económicos | No | Disponible |
+| [datos.gob.cl](https://datos.gob.cl/) | Datasets abiertos (CKAN) | Sí | Disponible |
+| Banco Central, ChileCompra, BCN, INE, SERVEL, SINCA, CNE, IDE Chile, SNIFA | Varios | Sí | Manifiesto; conector en el roadmap |
+
+Los valores que vienen de fuentes no oficiales incluyen `sourceId` y fecha real de
+publicación, para que el agente pueda citar y detectar datos desactualizados.
+
+## Seguridad
+
+ChileKit asume que quien lo invoca es un agente y que los datos de terceros pueden ser
+hostiles:
+
+- Solo contacta hosts de una allowlist, por HTTPS, con timeout y tope de tamaño.
+- Limpia el texto externo de secuencias de terminal, caracteres invisibles y payloads
+  largos antes de entregarlo.
+- No tiene tools con efectos laterales ni telemetría.
+- CI con CodeQL, zizmor, dependency review, OpenSSF Scorecard y acciones fijadas por SHA.
+
+Detalle en [docs/threat-model.md](docs/threat-model.md). Para reportar vulnerabilidades,
+ver [SECURITY.md](SECURITY.md).
 
 ## Principios de datos
 
-- Solo datos publicos, institucionales o agregados.
-- Nada de scraping de personas, domicilios, identidades o rutificadores.
-- RUT solo puede validarse localmente como formato/digito verificador; nunca se consulta
-  identidad asociada.
-- Toda nueva fuente debe declarar origen, licencia o terminos, frescura esperada y
-  limitaciones conocidas.
+- Solo datos públicos, institucionales o agregados.
+- Nada de scraping de personas ni rutificadores. El RUT solo se valida localmente como
+  formato y dígito verificador ([docs/privacy.md](docs/privacy.md)).
+- Toda fuente declara origen, licencia o términos, frescura y limitaciones.
 
 ## Desarrollo
 
 ```bash
 pnpm install
-pnpm check
+pnpm check   # lint, typecheck, tests, build, smoke test de binarios y audit
 ```
 
-Scripts principales:
+Monorepo con cuatro paquetes:
 
-- `pnpm lint`: Biome.
-- `pnpm typecheck`: TypeScript estricto.
-- `pnpm test`: Vitest.
-- `pnpm build`: build ESM de paquetes.
-- `pnpm audit`: auditoria de dependencias.
+| Paquete | Rol |
+|---|---|
+| [`@chilekit/core`](packages/core) | Tipos, fechas, RUT y saneamiento de texto |
+| [`@chilekit/sources`](packages/sources) | Conectores, manifiestos y cliente HTTP endurecido |
+| [`@chilekit/cli`](packages/cli) | Binario `chilekit` |
+| [`@chilekit/mcp`](packages/mcp) | Binario `chilekit-mcp` |
 
-## Roadmap corto
-
-Ver [docs/roadmap.md](docs/roadmap.md).
+Ver [CONTRIBUTING.md](CONTRIBUTING.md) para agregar fuentes y [docs/roadmap.md](docs/roadmap.md)
+para lo que viene.
 
 ## Licencia
 

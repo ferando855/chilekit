@@ -2,10 +2,34 @@
   "name": "@chilekit/cli",
   "version": "0.1.0",
   "description": "CLI agent-friendly para consultar datos publicos chilenos.",
-  "type": "module",
+  "keywords": [
+    "chile",
+    "cli",
+    "agents",
+    "ai",
+    "datos-publicos",
+    "feriados",
+    "uf",
+    "dias-habiles"
+  ],
+  "homepage": "https://github.com/ferando855/chilekit/tree/main/packages/cli#readme",
+  "bugs": {
+    "url": "https://github.com/ferando855/chilekit/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ferando855/chilekit.git",
+    "directory": "packages/cli"
+  },
   "license": "MIT",
+  "author": "ferando855 (https://github.com/ferando855)",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "bin": {
     "chilekit": "./dist/bin.js"
