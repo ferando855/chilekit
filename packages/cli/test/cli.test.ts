@@ -66,6 +66,15 @@ describe("cli", () => {
     ).toMatchObject({ date: "2027-01-04" });
   });
 
+  it("writes amounts in words", async () => {
+    expect(JSON.parse(await run(["en-palabras", "1.500.000", "--json"]))).toMatchObject({
+      words: "un millón quinientos mil pesos",
+    });
+    expect(
+      JSON.parse(await run(["en-palabras", "200", "uf", "--mayusculas", "--json"])),
+    ).toMatchObject({ words: "DOSCIENTAS UNIDADES DE FOMENTO" });
+  });
+
   it.each([
     [["feriado", "2026-13-45"]],
     [["feriados", "abc"]],
@@ -76,6 +85,8 @@ describe("cli", () => {
     [["convertir", "abc", "uf"]],
     [["convertir", "1,234.56", "uf"]],
     [["reajustar", "1000", "2020-02-30"]],
+    [["en-palabras", "1500,5", "clp"]],
+    [["en-palabras", "10", "yen"]],
   ])("rejects invalid arguments: %j", async (args) => {
     await expect(run(args)).rejects.toThrow();
   });
