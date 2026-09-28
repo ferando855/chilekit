@@ -14,3 +14,4 @@ Checklist para mantener el repo publico sin ruido:
 - Templates de bug, feature y PR.
 - Sin secretos ni `.env` commiteados.
 - Contrato CLI-first para agentes documentado en `docs/agents.md`.
+- Publicacion con provenance documentada en `docs/releasing.md`.

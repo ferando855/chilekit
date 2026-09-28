@@ -1,6 +1,6 @@
 {
   "name": "@chilekit/cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "CLI agent-friendly para consultar datos publicos chilenos.",
   "keywords": [
     "chile",
