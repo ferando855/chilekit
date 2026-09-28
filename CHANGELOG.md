@@ -13,6 +13,8 @@
   en el calculo de dias habiles.
 - `hora` y `cambio-hora`, tools `get_chile_time` y `get_time_changes`: hora oficial y
   cambios de hora de Chile continental, Magallanes e Isla de Pascua, sin red.
+- `en-palabras` y tool `amount_to_words`: montos en palabras segun la RAE para pesos,
+  UF, UTM, dolares y euros, con el formato usual de documentos.
 
 ## 0.2.0
 

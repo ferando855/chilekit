@@ -1,4 +1,5 @@
 import {
+  amountToWords,
   assertIsoDate,
   CHILE_TIME_ZONES,
   currentYearInChile,
@@ -6,6 +7,8 @@ import {
   parseChileanNumber,
   todayInChile,
   validateRut,
+  WORD_CURRENCIES,
+  type WordCurrency,
 } from "@chilekit/core";
 import { startMcpServer } from "@chilekit/mcp";
 import {
@@ -379,6 +382,34 @@ export function createProgram(): Command {
     });
 
   program
+    .command("en-palabras")
+    .description("Escribe un monto en palabras para contratos, pagares y escritos.")
+    .argument("<monto>", "monto, por ejemplo 1.500.000 o 3,5", parseAmount)
+    .argument("[unidad]", `unidad: ${Object.keys(WORD_CURRENCIES).join(", ")}`, "clp")
+    .option("--mayusculas", "devuelve el texto en mayusculas")
+    .option("--json", "emite salida JSON para agentes y scripts")
+    .action(
+      (amount: number, unit: string, options: JsonCommandOptions & { mayusculas?: boolean }) => {
+        const output = getOutputOptions(program, options);
+        const result = amountToWords(amount, parseWordCurrency(unit));
+        const final = options.mayusculas
+          ? {
+              ...result,
+              legal: result.legal.toLocaleUpperCase("es-CL"),
+              words: result.words.toLocaleUpperCase("es-CL"),
+            }
+          : result;
+
+        if (output.json) {
+          printJson(final);
+          return;
+        }
+
+        process.stdout.write(`${final.legal}\n`);
+      },
+    );
+
+  program
     .command("rut")
     .description(
       "Valida formato y digito verificador de un RUT, localmente y sin consultar identidad.",
@@ -634,6 +665,27 @@ function describeTimeChange(change: {
   const after = change.localAfter.split("T")[1];
 
   return `${day} a las ${time} se ${change.clocks === "atrasar" ? "atrasan" : "adelantan"} los relojes a las ${after}`;
+}
+
+function parseWordCurrency(value: string): WordCurrency {
+  const key = value.trim().toLowerCase();
+  const aliases: Record<string, WordCurrency> = {
+    $: "clp",
+    peso: "clp",
+    pesos: "clp",
+    usd: "dolar",
+    dólar: "dolar",
+    dolares: "dolar",
+    eur: "euro",
+    ninguna: "none",
+  };
+  const unit = key in WORD_CURRENCIES ? (key as WordCurrency) : aliases[key];
+
+  if (!unit) {
+    throw new InvalidArgumentError(`Unidad no soportada: ${value}`);
+  }
+
+  return unit;
 }
 
 function parseAmount(value: string): number {

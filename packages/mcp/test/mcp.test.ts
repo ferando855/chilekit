@@ -48,6 +48,7 @@ describe("mcp", () => {
         "adjust_by_uf",
         "get_chile_time",
         "get_time_changes",
+        "amount_to_words",
       ]),
     );
     expect(tools.every((tool) => tool.annotations?.readOnlyHint === true)).toBe(true);

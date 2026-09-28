@@ -1,4 +1,11 @@
-import { getTimeChanges, todayInChile, validateRut } from "@chilekit/core";
+import {
+  amountToWords,
+  getTimeChanges,
+  todayInChile,
+  validateRut,
+  WORD_CURRENCIES,
+  type WordCurrency,
+} from "@chilekit/core";
 import {
   addBusinessDays,
   adjustByUf,
@@ -292,6 +299,23 @@ export function createMcpServer(): McpServer {
       }),
     },
     async ({ year }) => textJson({ changes: getTimeChanges(year), year }),
+  );
+
+  server.registerTool(
+    "amount_to_words",
+    {
+      title: "Monto en palabras",
+      annotations: LOCAL_TOOL,
+      description:
+        "Escribe un monto en palabras en español segun la RAE, con concordancia de genero y 'de' cuando corresponde (ej. 'un millón de pesos', 'doscientas unidades de fomento', 'mil dólares con cincuenta centavos'). Devuelve tambien la forma usual en documentos: '$1.500.000 (un millón quinientos mil pesos)'.",
+      inputSchema: z.object({
+        amount: z.number().finite().min(-999_999_999_999_999).max(999_999_999_999_999),
+        currency: z
+          .enum(Object.keys(WORD_CURRENCIES) as [WordCurrency, ...WordCurrency[]])
+          .default("clp"),
+      }),
+    },
+    async ({ amount, currency }) => textJson(amountToWords(amount, currency)),
   );
 
   server.registerTool(

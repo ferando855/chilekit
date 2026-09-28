@@ -115,6 +115,7 @@ es el contrato recomendado ([docs/agents.md](docs/agents.md)). También hay una
 | `chilekit reajustar <monto> <desde> [hasta]` | Reajusta pesos por la variación de la UF entre dos fechas |
 | `chilekit hora [--comuna]` | Hora oficial y próximo cambio de hora (continental, Magallanes, Isla de Pascua) |
 | `chilekit cambio-hora [año]` | Cambios de hora del año en cada huso |
+| `chilekit en-palabras <monto> [unidad]` | Monto en palabras para documentos: `$1.500.000 (un millón quinientos mil pesos)` |
 | `chilekit rut <rut>` | Valida dígito verificador localmente |
 | `chilekit regiones` | Las 16 regiones |
 | `chilekit comunas --region <region>` | Comunas de una región (`"Biobío"`, `8`, `VIII`, `RM`, `CL-VS`) |
@@ -141,6 +142,7 @@ bancario.
 | `convert_currency` · `adjust_by_uf` | ✓ | Conversión CLP/UF/UTM/USD/EUR y reajuste por UF |
 | `search_open_datasets` | ✓ | Datasets de datos.gob.cl |
 | `get_chile_time` · `get_time_changes` | | Hora oficial y cambios de hora, sin red |
+| `amount_to_words` | | Montos en palabras (pesos, UF, UTM, dólares, euros), local |
 | `validate_rut` | | Dígito verificador, local |
 | `list_regions` · `list_communes` · `get_commune_info` | | División territorial |
 | `search_chile_sources` · `get_source_manifest` | | Catálogo de fuentes |
