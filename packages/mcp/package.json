@@ -53,6 +53,6 @@
     "@chilekit/core": "workspace:*",
     "@chilekit/sources": "workspace:*",
     "@modelcontextprotocol/sdk": "1.30.1",
-    "zod": "4.6.5"
+    "zod": "4.6.7"
   }
 }
